@@ -108,6 +108,7 @@ pub fn writeAgent(writer: *std.Io.Writer) std.Io.Writer.Error!void {
     try writer.writeAll("For std fs/env/time insulation, prefer `myzig.compat` and `check --prefer-compat`.\n");
     try writer.writeAll("Living tips (update as text, not always as code): run `myzig friction`.\n");
     try writer.writeAll("Honest ceilings: run `myzig limits` before claiming proof.\n");
+    try writer.writeAll("Session contract: `myzig agent` (or `myzig agent --full`).\n");
     try writer.writeAll("Repair cards: `myzig explain <file:line> --json` or `--agent`.\n\n");
     for (schema.seed_rules) |rule| {
         try writer.print("## {s}\n", .{rule.id});

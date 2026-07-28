@@ -3,13 +3,14 @@
 Deterministic self-correction loop for coding agents using myzig:
 
 ```text
+0. myzig agent            # contract (optional: --full)
 1. myzig check <path>
 2. pick a finding (file:line)
-3. myzig explain <file:line>
+3. myzig explain <file:line> [--json|--agent]
 4. choose a repair intent from the listed options (do not invent policy)
 5. apply the repair in source
-6. myzig check <path>   # expect 0 findings
-7. myzig receipt <path> # optional observed evidence
+6. myzig check <path>   # expect 0 findings (or --ratchet ok)
+7. myzig receipt <path> # observed evidence; claimed only after verify-cost
 ```
 
 ## Example (fixtures)

@@ -11,6 +11,7 @@ const baseline_mod = @import("baseline.zig");
 const adopt_mod = @import("adopt.zig");
 const verify_cost_mod = @import("verify_cost.zig");
 const limits_mod = @import("limits.zig");
+const agent_mod = @import("agent_contract.zig");
 
 pub const Command = enum {
     help,
@@ -23,6 +24,7 @@ pub const Command = enum {
     receipt,
     friction,
     limits,
+    agent,
     verify_cost,
     init,
     unknown,
@@ -40,6 +42,7 @@ pub const Command = enum {
         if (std.mem.eql(u8, name, "receipt")) return .receipt;
         if (std.mem.eql(u8, name, "friction")) return .friction;
         if (std.mem.eql(u8, name, "limits")) return .limits;
+        if (std.mem.eql(u8, name, "agent")) return .agent;
         if (std.mem.eql(u8, name, "verify-cost")) return .verify_cost;
         if (std.mem.eql(u8, name, "init")) return .init;
         return .unknown;
@@ -75,6 +78,7 @@ pub fn writeHelp(writer: *std.Io.Writer) std.Io.Writer.Error!void {
         \\  receipt [path]            Emit thin check receipt (JSON)
         \\  friction [--sources]      Living text playbook (update without new code)
         \\  limits [--sources]        Published honest detector ceilings
+        \\  agent [--full]            Agent contract (+ optional limits/friction/rules)
         \\  verify-cost <case|--list> Leveled cost witness (claimed only after run)
         \\  init                      Create .myzig/ project config
         \\  help                      Show this help
@@ -291,7 +295,16 @@ pub fn dispatch(rio: RunIo, argv: []const []const u8) !void {
                 \\
             ;
             try compat.writeFile(rio.io, ".myzig/friction-playbook.md", overlay);
-            try rio.stdout.writeAll("created .myzig/ (including friction-playbook overlay)\n");
+            const agent_notes =
+                \\# Agent notes (project)
+                \\
+                \\Session start: `myzig agent` (or `myzig agent --full`).
+                \\Loop: check → explain --json → pick intent → edit → check → receipt.
+                \\Friction: append here or in package `docs/friction-playbook.md`.
+                \\
+            ;
+            try compat.writeFile(rio.io, ".myzig/agent-notes.md", agent_notes);
+            try rio.stdout.writeAll("created .myzig/ (friction overlay + agent-notes)\n");
         },
         .friction => {
             var show_sources = false;
@@ -320,6 +333,31 @@ pub fn dispatch(rio: RunIo, argv: []const []const u8) !void {
             var bundle = try limits_mod.load(rio.io, rio.allocator);
             defer bundle.deinit(rio.allocator);
             try limits_mod.write(rio.stdout, bundle, show_sources);
+        },
+        .agent => {
+            var full = false;
+            for (rest) |a| {
+                if (std.mem.eql(u8, a, "--full")) {
+                    full = true;
+                } else {
+                    try rio.stderr.print("myzig agent: unknown flag '{s}'\n", .{a});
+                    return error.Usage;
+                }
+            }
+            if (full) {
+                try agent_mod.writeFullBriefing(
+                    rio.io,
+                    rio.allocator,
+                    rio.stdout,
+                    rio.version,
+                    true,
+                    true,
+                    true,
+                );
+            } else {
+                try agent_mod.writeContract(rio.stdout, rio.version);
+                try rio.stdout.writeAll("Tip: `myzig agent --full` includes limits + friction + rules --agent.\n");
+            }
         },
         .verify_cost => {
             if (rest.len < 1) return error.Usage;
@@ -353,5 +391,6 @@ test "parse known commands" {
     try std.testing.expect(Command.parse("receipt") == .receipt);
     try std.testing.expect(Command.parse("friction") == .friction);
     try std.testing.expect(Command.parse("limits") == .limits);
+    try std.testing.expect(Command.parse("agent") == .agent);
     try std.testing.expect(Command.parse("verify-cost") == .verify_cost);
 }

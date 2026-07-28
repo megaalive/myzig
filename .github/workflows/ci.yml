@@ -138,3 +138,5 @@ jobs:
           grep -q 'id-passthrough' receipt-cost.json
           "$BIN" limits | grep -q "Certainty"
           "$BIN" limits --sources | grep -q "docs/LIMITS.md"
+          "$BIN" agent | grep -q "Self-correction loop"
+          "$BIN" agent --full | grep -q "myzig agent rule card"

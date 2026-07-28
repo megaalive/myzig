@@ -90,3 +90,10 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **don't:** Leave stub `else => stubMessage` after real commands land — breaks the exe build even if `zig build test` looked green
 - **promote-to-code-when:** already noted; re-hit → add CLI exhaustiveness test
 - **incident:** AGENT-CLI-002
+
+### F-CLI-005 · Start agent sessions with myzig agent
+- **symptom:** Agent skips limits/friction and over-claims or reinvents policy
+- **do:** Run `myzig agent` (or `--full`) once per session before editing Zig; follow the printed loop
+- **don't:** Treat chat memory as the ownership policy source of truth
+- **promote-to-code-when:** already promoted → `myzig agent` contract command
+- **incident:** none yet

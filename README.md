@@ -43,6 +43,7 @@ myzig adopt [path]           # editable .myzig/policy.md + baseline if missing
 myzig baseline [path]        # snapshot findings for ratchet
 myzig friction [--sources]   # living text tips; update without new Zig code
 myzig limits [--sources]     # published honest detector ceilings
+myzig agent [--full]         # agent contract (+ limits/friction/rules)
 myzig rules [--json|--markdown|--agent|--sarif]
 myzig receipt [path]
 myzig verify-cost <case>

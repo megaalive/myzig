@@ -20,4 +20,5 @@ confusion, bad CLI exits, missing explain/repair choices, CI/harness traps —
 5. Do not invent ownership policy silently; use `myzig explain` repair intents.
 6. Never claim `proven` above a rule's `certainty_ceiling`.
 
-Read `docs/agent-friction.md`, `docs/friction-playbook.md`, and `docs/agent-loop.md`.
+Read `docs/agent-friction.md`, `docs/friction-playbook.md`, `docs/agent-loop.md`,
+and run `myzig agent` at session start when coaching Zig.

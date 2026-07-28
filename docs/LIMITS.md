@@ -50,13 +50,14 @@ Also see `docs/BLINDSPOTS.md` (analyzer detail) and `docs/friction-playbook.md`.
 - Field initializers inside `return .{ ... }` count as transfer (`AZIG-OWN-006`), including `const x = try …; return .{ .f = x }`.
 - Exact assignment retarget `out = next` joins the alias closure (`AZIG-OWN-007`).
 - Field assignment `self.x = try …alloc/dupe/create` counts as store transfer (`EXT-STUDY-007`).
+- Indexed store `into[i] = try …dupe/alloc` counts as transfer into a caller buffer (`EXT-STUDY-020`).
 - Arena-token acquires (`analyser.arena`, `arena_allocator`, …) count as transferred (`EXT-STUDY-008`).
-- `.create(` is an acquire only when it looks like single-arg `allocator.create(T)` (`EXT-STUDY-009`).
+- `.create(` is an acquire only for single-argument calls (`allocator.create(T)`) (`EXT-STUDY-009`).
 - Empty `defer {}` / `errdefer {}` (whitespace/comment-only) are convention notes (`EXT-STUDY-001`).
 - Hidden `page_allocator` / `c_allocator` use on alloc/free lines is a convention note (`EXT-STUDY-004`).
 - Empty `catch {}` / `catch unreachable` are convention notes; comment-only catch and documented unreachable are allowed (`EXT-STUDY-005`, `EXT-STUDY-009`).
 - Inline suppressions: `// myzig-disable-next-line` / `myzig-disable-current-line` [`rule_id…`] (`EXT-STUDY-005`).
-- `.init(` bindings without `.deinit` / return transfer are convention notes (`EXT-STUDY-012`).
+- `.init(` bindings without `.deinit` / return transfer are convention notes (`EXT-STUDY-012`); `return .{ .f = name }` transfers (`EXT-STUDY-020`).
 - Optional `myzig.compat.PhaseAllocator` seals alloc capability after startup (`EXT-STUDY-010`).
 
 ## Dogfood snapshot

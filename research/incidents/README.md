@@ -39,6 +39,11 @@ Rules (and compat/contract improvements) are born from incidents.
 | `EXT-STUDY-013` | FFI external-resource blind spots (future) |
 | `EXT-STUDY-014` | Completion/callback storage stability (playbook) |
 | `EXT-STUDY-015` | Language repo as semantic reference, not app template |
+| `EXT-STUDY-016` | Request-scoped arena reset / retain limit |
+| `EXT-STUDY-017` | Query result deinit may release a pool connection |
+| `EXT-STUDY-018` | FFI wrapper deinit closes C handle |
+| `EXT-STUDY-019` | Fixed-region / linker-heap allocators |
+| `EXT-STUDY-020` | Indexed out-store + init returned in struct |
 | `ZRIG-DOGFOOD-001` | Clean prefer-compat ratchet baseline |
 | `AGENT-STD-001` / `002` | std churn → compat + volatile rule |
 | `AGENT-CLI-001` / `002` | Clean exits; exhaustive CLI / witness hash |

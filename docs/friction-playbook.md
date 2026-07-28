@@ -209,3 +209,38 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **don't:** Treat completion like a plain value that can be copied freely
 - **promote-to-code-when:** playbook until CFG of submissions exists
 - **incident:** EXT-STUDY-014
+
+### F-OWN-018 · Request arenas reset; don't local-free
+- **symptom:** `defer free` on a pointer allocated from `req.arena`
+- **do:** Allocate from the request arena; let request-end `arena.reset` reclaim
+- **don't:** Mix GPA `free` with arena-owned slices
+- **promote-to-code-when:** arena-token transfer already covers most cases
+- **incident:** EXT-STUDY-016
+
+### F-OWN-019 · Result/query deinit may return a pool conn
+- **symptom:** forgetting `defer result.deinit()` after `pool.query`
+- **do:** Always pair query results with deinit; `drain` if you stop early
+- **don't:** Assume row slices outlive the result/reader buffer
+- **promote-to-code-when:** playbook; soft detector later if dogfood repeats
+- **incident:** EXT-STUDY-017
+
+### F-OWN-020 · Wrap C handles; deinit closes them
+- **symptom:** calling raw C `close`/`finalize` at every exit while also using a Zig wrapper type
+- **do:** Own the C handle behind `Wrapper.deinit` / statement-like `deinit`
+- **don't:** Rely on GPA leak checks to prove C cleanup
+- **promote-to-code-when:** future `ffi.*` if incidents repeat
+- **incident:** EXT-STUDY-018
+
+### F-OWN-021 · Freestanding heaps are explicit regions
+- **symptom:** hidden `page_allocator` on freestanding / embedded targets
+- **do:** Use linker-heap / fixed-buffer allocator APIs for the region you own
+- **don't:** Copy “no malloc ever” into hosted request-scoped servers
+- **promote-to-code-when:** playbook (+ PhaseAllocator for phase-gated hosted apps)
+- **incident:** EXT-STUDY-019
+
+### F-OWN-022 · Fill caller buffers; return init in structs
+- **symptom:** `into[i] = try dupe` or `return .{ .state = try State.init }` flagged
+- **do:** Prefer these transfer shapes; free/`deinit` at the owner
+- **don't:** Add local defer free on values stored into caller/`return .{…}`
+- **promote-to-code-when:** already promoted → indexed-out + init struct return
+- **incident:** EXT-STUDY-020

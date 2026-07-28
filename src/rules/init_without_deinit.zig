@@ -29,6 +29,10 @@ pub fn analyzeSource(
                 search_from = hit.index + hit.name.len;
                 continue;
             }
+            if (bindingUsedInReturnedStructField(body, hit.name)) {
+                search_from = hit.index + hit.name.len;
+                continue;
+            }
             try out.append(gpa, diagnostic.Diagnostic.fromRule(
                 schema.seed_init_without_deinit,
                 .convention,
@@ -126,6 +130,45 @@ fn bodyTransfersName(body: []const u8, name: []const u8) bool {
     return false;
 }
 
+fn bindingUsedInReturnedStructField(body: []const u8, name: []const u8) bool {
+    var i: usize = 0;
+    while (i < body.len) : (i += 1) {
+        if (!std.mem.startsWith(u8, body[i..], "return")) continue;
+        if (i > 0) {
+            const prev = body[i - 1];
+            if (std.ascii.isAlphanumeric(prev) or prev == '_') continue;
+        }
+        var j = i + "return".len;
+        if (j < body.len and (std.ascii.isAlphanumeric(body[j]) or body[j] == '_')) continue;
+        while (j < body.len and std.ascii.isWhitespace(body[j])) : (j += 1) {}
+        if (!std.mem.startsWith(u8, body[j..], ".{")) continue;
+        const open = j + 1;
+        const close = scan.matchingBrace(body, open) orelse continue;
+        const span = body[open .. close + 1];
+        if (identAssignedInSpan(span, name)) return true;
+    }
+    return false;
+}
+
+fn identAssignedInSpan(span: []const u8, name: []const u8) bool {
+    var i: usize = 0;
+    while (i < span.len) : (i += 1) {
+        if (span[i] != '=') continue;
+        if (i + 1 < span.len and (span[i + 1] == '=' or span[i + 1] == '>')) continue;
+        if (i > 0 and (span[i - 1] == '!' or span[i - 1] == '<' or span[i - 1] == '>' or span[i - 1] == '=')) continue;
+        var j = i + 1;
+        while (j < span.len and std.ascii.isWhitespace(span[j])) : (j += 1) {}
+        if (!std.mem.startsWith(u8, span[j..], name)) continue;
+        const end = j + name.len;
+        if (end < span.len) {
+            const next = span[end];
+            if (next == '.' or next == '[' or std.ascii.isAlphanumeric(next) or next == '_') continue;
+        }
+        return true;
+    }
+    return false;
+}
+
 test "init without deinit flagged; defer deinit and return transfer are not" {
     const gpa = std.testing.allocator;
     const fail_src =
@@ -146,6 +189,13 @@ test "init without deinit flagged; defer deinit and return transfer are not" {
         \\    return loop;
         \\}
     ;
+    const struct_transfer_src =
+        \\pub fn giveStruct() !S {
+        \\    const req_state = try State.init(.{});
+        \\    const res_state = try State.init(.{});
+        \\    return .{ .req_state = req_state, .res_state = res_state };
+        \\}
+    ;
     var fail_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
     defer fail_diags.deinit(gpa);
     try analyzeSource("fail.zig", fail_src, &fail_diags, gpa);
@@ -160,4 +210,9 @@ test "init without deinit flagged; defer deinit and return transfer are not" {
     defer transfer_diags.deinit(gpa);
     try analyzeSource("transfer.zig", transfer_src, &transfer_diags, gpa);
     try std.testing.expect(transfer_diags.items.len == 0);
+
+    var struct_transfer_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer struct_transfer_diags.deinit(gpa);
+    try analyzeSource("struct_transfer.zig", struct_transfer_src, &struct_transfer_diags, gpa);
+    try std.testing.expect(struct_transfer_diags.items.len == 0);
 }

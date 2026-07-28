@@ -6,7 +6,7 @@
 const std = @import("std");
 
 /// Bumped when seed rule set identity changes in a receipt-relevant way.
-pub const ruleset_revision: []const u8 = "0.0.0-seed9";
+pub const ruleset_revision: []const u8 = "0.0.0-seed10";
 
 pub const Certainty = enum {
     /// Expensive; only when local facts suffice. Heuristic AST rules must not use this as ceiling.
@@ -231,6 +231,7 @@ pub const seed_alloc_undischarged: Rule = .{
         "fixtures/pass/alloc_field_store.zig",
         "fixtures/pass/alloc_arena_backed.zig",
         "fixtures/pass/method_create_store.zig",
+        "fixtures/pass/alloc_indexed_out.zig",
         "fixtures/fail/alloc_print_undischarged.zig",
         "fixtures/fail/alloc_concat_undischarged.zig",
         "research/incidents/MYZIG-OWN-001.md",
@@ -244,6 +245,7 @@ pub const seed_alloc_undischarged: Rule = .{
         "research/incidents/EXT-STUDY-007.md",
         "research/incidents/EXT-STUDY-008.md",
         "research/incidents/EXT-STUDY-009.md",
+        "research/incidents/EXT-STUDY-020.md",
     },
 };
 
@@ -485,7 +487,9 @@ pub const seed_init_without_deinit: Rule = .{
     .references = &.{
         "fixtures/fail/init_without_deinit.zig",
         "fixtures/pass/init_defer_deinit.zig",
+        "fixtures/pass/init_struct_return.zig",
         "research/incidents/EXT-STUDY-012.md",
+        "research/incidents/EXT-STUDY-020.md",
     },
 };
 

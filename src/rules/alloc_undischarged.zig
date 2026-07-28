@@ -52,6 +52,7 @@ pub fn analyzeSource(
             const hit_in_body = hit; // relative to body
             const transferred = isReturnTransferLine(line_slice) or
                 isOutParamAcquireLine(line_slice) or
+                isIndexedOutStoreTransferLine(line_slice) or
                 isCollectionTransferLine(line_slice) or
                 isFieldStoreTransferLine(line_slice) or
                 isArenaBackedAcquireLine(line_slice) or
@@ -90,6 +91,22 @@ fn isOutParamAcquireLine(line: []const u8) bool {
     if (std.mem.indexOf(u8, line, "=") == null) return false;
     for (acquire_needles) |needle| {
         if (std.mem.indexOf(u8, line, needle) != null) return true;
+    }
+    return false;
+}
+
+/// `into[i] = try allocator.dupe(...)` — fill a caller-provided buffer/slice.
+fn isIndexedOutStoreTransferLine(line: []const u8) bool {
+    const lb = std.mem.indexOfScalar(u8, line, '[') orelse return false;
+    const rb = std.mem.indexOfScalarPos(u8, line, lb + 1, ']') orelse return false;
+    const eq = std.mem.indexOfScalarPos(u8, line, rb + 1, '=') orelse return false;
+    if (eq + 1 < line.len and (line[eq + 1] == '=' or line[eq + 1] == '>')) return false;
+    if (eq > 0 and (line[eq - 1] == '!' or line[eq - 1] == '<' or line[eq - 1] == '>' or line[eq - 1] == '=')) return false;
+    const lhs = std.mem.trim(u8, line[0..eq], " \t");
+    if (std.mem.startsWith(u8, lhs, "const ") or std.mem.startsWith(u8, lhs, "var ")) return false;
+    const rhs = line[eq + 1 ..];
+    for (acquire_needles) |needle| {
+        if (std.mem.indexOf(u8, rhs, needle) != null) return true;
     }
     return false;
 }
@@ -812,4 +829,14 @@ test "leaky local alloc is flagged; defer free and return-transfer are not" {
     defer alloc_create_diags.deinit(gpa);
     try analyzeSource("alloc_create.zig", alloc_create_fail_src, &alloc_create_diags, gpa);
     try std.testing.expect(alloc_create_diags.items.len >= 1);
+
+    const indexed_out_src =
+        \\pub fn fill(allocator: anytype, into: [][]u8, src: []const u8) !void {
+        \\    into[0] = try allocator.dupe(u8, src);
+        \\}
+    ;
+    var indexed_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer indexed_diags.deinit(gpa);
+    try analyzeSource("indexed.zig", indexed_out_src, &indexed_diags, gpa);
+    try std.testing.expect(indexed_diags.items.len == 0);
 }

@@ -9,7 +9,7 @@ myzig's early detectors are **local heuristics**, not whole-program proof.
 | Area | Limitation |
 |------|------------|
 | Path sensitivity | Conditional free/close may be treated as function-wide discharge |
-| Transfers | Return / out-param / rename / retarget / field-store / `return .{ fields }` / append / arena-backed; wrapper / callee frees still weak |
+| Transfers | Return / out-param / indexed-out / rename / retarget / field-store / `return .{ fields }` / append / arena-backed; wrapper / callee frees still weak |
 | Aliasing | Exact RHS rename closure (bounded) is followed for transfer/free; wrapper APIs stay invisible |
 | Local free | `.free(name)` / `.destroy(name)` / `name.deinit(` discharge that binding; coarse function-wide `defer …deinit/free` remains for arena-style sites |
 | Permits | `@ptrCast`/`@alignCast` accept permit/safety on adjacent lines (prev/curr/next) |
@@ -33,6 +33,10 @@ myzig's early detectors are **local heuristics**, not whole-program proof.
 | Async completions | Outstanding submissions after deinit not modeled (`EXT-STUDY-014`) |
 | Phase allocators | Optional helper only; sealed-phase misuse is assert-time, not a check rule |
 | Language semantics | Prefer std/compiler truth over folk patterns (`EXT-STUDY-015`) |
+| Request arenas | Reset/retain boundaries documented; not path-sensitive (`EXT-STUDY-016`) |
+| Pooled resources | `deinit` may release pool handles — not modeled beyond playbook (`EXT-STUDY-017`) |
+| FFI wrappers | C `close`/`finalize` inside Zig `deinit` is convention, not a seed rule yet (`EXT-STUDY-018`) |
+| Region heaps | Linker/fixed-buffer allocators are playbook/helper territory (`EXT-STUDY-019`) |
 
 ## Product stance
 

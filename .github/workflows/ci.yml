@@ -83,7 +83,9 @@ jobs:
           "$BIN" check fixtures/pass/alloc_field_store.zig
           "$BIN" check fixtures/pass/alloc_arena_backed.zig
           "$BIN" check fixtures/pass/method_create_store.zig
+          "$BIN" check fixtures/pass/alloc_indexed_out.zig
           "$BIN" check fixtures/pass/init_defer_deinit.zig
+          "$BIN" check fixtures/pass/init_struct_return.zig
           "$BIN" check fixtures/pass/file_defer_close.zig
           "$BIN" check fixtures/pass/file_return.zig
           "$BIN" check fixtures/pass/ptrcast_remarked.zig

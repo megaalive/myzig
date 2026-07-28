@@ -422,13 +422,13 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 
 ### F-OWN-048 · Connection arenas reset with a retain cap
 - **symptom:** unbounded arena growth across keep-alive requests, or freeing connection buffers the pool still owns
-- **do:** rena.reset(.{ .retain_with_limit = N }) per request; deinit TLS with the server
+- **do:** arena.reset(.{ .retain_with_limit = N }) per request; deinit TLS with the server
 - **don't:** Mix GPA free with connection-arena slices
 - **promote-to-code-when:** playbook (see also F-OWN-018)
 - **incident:** EXT-STUDY-044
 
 ### F-OWN-049 · Buffer pools release or promote carefully
-- **symptom:** llocator.free on a still-pooled buffer, or leaking after grow promotes out of the pool
+- **symptom:** allocator.free on a still-pooled buffer, or leaking after grow promotes out of the pool
 - **do:** pool.release when pooled; after promotion free with the allocator only
 - **don't:** Assume resize keeps the buffer in the pool
 - **promote-to-code-when:** playbook; elease already helps
@@ -463,7 +463,7 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **incident:** EXT-STUDY-049
 
 ### F-OWN-054 · Steady-state paths avoid GPA
-- **symptom:** hot-path llocator.alloc in journals/replicas/event loops sized for static limits
+- **symptom:** hot-path allocator.alloc in journals/replicas/event loops sized for static limits
 - **do:** Size at startup / use static buffers; seal with PhaseAllocator when phases exist
 - **don't:** Copy fuzz-only GPA usage into production steady state
 - **promote-to-code-when:** playbook + PhaseAllocator
@@ -495,4 +495,60 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **do:** Clone/survey/promote/ship the entire named set in one batch (or write an explicit dated debt with owners)
 - **don't:** End a turn with unpaid concrete targets presented as finished work
 - **promote-to-code-when:** process forever (text)
-- **incident:** EXT-STUDY-054
+- **incident:** EXT-STUDY-054 / EXT-STUDY-062 / AGENT-STUDY-002
+
+### F-OWN-058 · UEFI BootServices pool ends at exitBootServices
+- **symptom:** treating firmware `allocatePool` like GPA, or calling BootServices after exit
+- **do:** Pair `allocatePool`/`freePool` (or `uefi.pool_allocator`); loop getMemoryMap until the key matches; after `exitBootServices`, only RuntimeServices remain
+- **don't:** Assume Zig heap semantics for BootServicesData
+- **promote-to-code-when:** playbook (sibling freestanding regions)
+- **incident:** EXT-STUDY-055
+
+### F-OWN-059 · Type-2 HV: host allocator ≠ guest RAM
+- **symptom:** allocating guest payloads with the host Zig allocator, or leaking VMM device graphs
+- **do:** Host GPA for VMM objects; guest RAM via HV memslots/mmap; `defer kvm_ctx.deinit()`
+- **don't:** Mix guest-physical regions into Zig `free`
+- **promote-to-code-when:** playbook
+- **incident:** EXT-STUDY-056
+
+### F-OWN-060 · Type-1 HV: page allocator + EPT
+- **symptom:** inventing Zig heap for bare-metal HV frames, or conflating EPT walks with GPA
+- **do:** Frame/page IDs from the HV page allocator; guest-phys→host-phys via EPT; seal boot UEFI map before runtime HV pages
+- **don't:** Claim detectors prove EPT correctness
+- **promote-to-code-when:** playbook
+- **incident:** EXT-STUDY-057
+
+### F-OWN-061 · Fuller OS stacks still layer reclaim
+- **symptom:** copying one OS’s heap API into another domain, or skipping page reclaim on task teardown
+- **do:** Keep PMM → VMM → heap layers; reclaim pages when unmapping; arenas for tools only
+- **don't:** Promote OS-specific APIs into seed rules
+- **promote-to-code-when:** playbook confirmation of kernel tips
+- **incident:** EXT-STUDY-058
+
+### F-OWN-062 · Signature arenas and HPKE exporters
+- **symptom:** leaking decode arenas, or retaining HPKE export secrets
+- **do:** Signature/secret decode owns an arena (`deinit` drains it); wipe/export-scope secrets like other crypto material
+- **don't:** Log exporter secrets
+- **promote-to-code-when:** playbook (strengthens F-OWN-057)
+- **incident:** EXT-STUDY-059
+
+### F-OWN-063 · Minimal kernels may have no Zig heap
+- **symptom:** inventing GPA/arena patterns for hello/SBI teaching kernels
+- **do:** Treat ownership as firmware + linker script when there is no allocator; study traps/SBI without forcing heap
+- **don't:** Add allocators just to satisfy ownership dogma
+- **promote-to-code-when:** study boundary
+- **incident:** EXT-STUDY-060
+
+### F-AGENT-004 · Clone blockers still require survey
+- **symptom:** skipping a named study because git-lfs/Windows path/checkout failed
+- **do:** Survey via GitHub API/raw README/tree; record the blocker in the incident; promote patterns that remain visible
+- **don't:** Treat a failed local clone as “not named”
+- **promote-to-code-when:** process forever (text)
+- **incident:** EXT-STUDY-061 / AGENT-STUDY-002
+
+### F-OWN-064 · C-runtime HTTP façades keep Zig arenas at the edge
+- **symptom:** treating a C event/HTTP core as idiomatic Zig ownership, or leaking per-thread request arenas
+- **do:** Drain tracked arenas on App.deinit; free Zig-owned auth/router state; learn close callbacks as FFI boundary
+- **don't:** Import C-runtime APIs into seed detectors; prefer pure-Zig servers for GPA/arena templates
+- **promote-to-code-when:** study boundary
+- **incident:** EXT-STUDY-063

@@ -62,6 +62,7 @@ Also see `docs/BLINDSPOTS.md` (analyzer detail) and `docs/friction-playbook.md`.
 - Post-Zig / foreign runtimes are allocator-*shape* references only (`EXT-STUDY-028`); borrowed-arena and single-buffer scratch tips stay playbook (`EXT-STUDY-029`, `EXT-STUDY-030`).
 - Kernel PMM/VMM/guest-quota patterns stay playbook (`EXT-STUDY-037`..`042`).
 - Async/net/wasm/image/crypto/tooling tips: `EXT-STUDY-043`..`054` (named shortlists must be finished in-batch).
+- UEFI/HV/OS cadangan + clone-blocker process: `EXT-STUDY-055`..`063` (optional/cadangan names count; API survey when clone fails).
 
 ## Dogfood snapshot
 

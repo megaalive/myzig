@@ -78,10 +78,20 @@ Rules (and compat/contract improvements) are born from incidents.
 | `EXT-STUDY-052` | Tripwire injects errdefer failures |
 | `EXT-STUDY-053` | Crypto keys are wipe-scoped secrets |
 | `EXT-STUDY-054` | Finish external-study shortlists in one batch |
+| `EXT-STUDY-055` | UEFI BootServices pool + exitBootServices |
+| `EXT-STUDY-056` | Type-2 HV host allocator vs guest RAM |
+| `EXT-STUDY-057` | Type-1 HV page allocator + EPT |
+| `EXT-STUDY-058` | Fuller OS layered reclaim (confirmation) |
+| `EXT-STUDY-059` | Signature decode arenas + HPKE exporters |
+| `EXT-STUDY-060` | Minimal kernels / SBI — no Zig heap |
+| `EXT-STUDY-061` | Clone blockers still require API survey |
+| `EXT-STUDY-062` | Cadangan / optional names are part of the set |
+| `EXT-STUDY-063` | C-runtime HTTP façades + request arenas |
 | `ZRIG-DOGFOOD-001` | Clean prefer-compat ratchet baseline |
 | `AGENT-STD-001` / `002` | std churn → compat + volatile rule |
 | `AGENT-CLI-001` / `002` | Clean exits; exhaustive CLI / witness hash |
 | `AGENT-STUDY-001` | Finish named external-study shortlists |
+| `AGENT-STUDY-002` | Cadangan / link-only recommendations are debt |
 | `docs/LIMITS.md` | Published honest ceilings (`myzig limits`) |
 
 See `docs/agent-friction.md` and `docs/friction-playbook.md`.

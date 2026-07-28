@@ -67,7 +67,11 @@ myzig's early detectors are **local heuristics**, not whole-program proof.
 | Static steady-state | Zero-alloc hot paths not proven (`EXT-STUDY-050`) |
 | Tooling stores | LSP/DocumentStore = boundary (`EXT-STUDY-051`) |
 | Tripwire | errdefer injection is test harness only (`EXT-STUDY-052`) |
-| Study batching | Named shortlists must be finished or dated (`EXT-STUDY-054`) |
+| Study batching | Named shortlists (incl. cadangan/optional) must be finished or dated (`EXT-STUDY-054`, `062`) |
+| UEFI BootServices | Pool/map-key/exit not modeled (`EXT-STUDY-055`) |
+| HV guest RAM | Memslots/EPT vs host GPA playbook only (`EXT-STUDY-056`, `057`) |
+| Clone blockers | Failed checkout ≠ unpaid skip; API survey required (`EXT-STUDY-061`) |
+| C-HTTP façades | Runtime close graphs not detectors (`EXT-STUDY-063`) |
 
 ## Product stance
 

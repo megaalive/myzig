@@ -32,7 +32,8 @@ pub fn analyzeSource(
             const line_slice = scan.lineSlice(source, abs_index);
             const binding = bindingNameFromAcquireLine(line_slice);
             const transferred = isReturnTransferLine(line_slice) or
-                (binding != null and bodyReturnsBinding(body, binding.?));
+                isOutParamAcquireLine(line_slice) or
+                (binding != null and bodyTransfersBinding(body, binding.?));
             const discharged = transferred or has_defer_discharge;
             if (!discharged) {
                 try out.append(gpa, diagnostic.Diagnostic.fromRule(
@@ -59,6 +60,16 @@ fn isReturnTransferLine(line: []const u8) bool {
     return false;
 }
 
+fn isOutParamAcquireLine(line: []const u8) bool {
+    // `out.* = try allocator.alloc(...)` — ownership handed to caller via pointer.
+    if (std.mem.indexOf(u8, line, ".*") == null) return false;
+    if (std.mem.indexOf(u8, line, "=") == null) return false;
+    for (acquire_needles) |needle| {
+        if (std.mem.indexOf(u8, line, needle) != null) return true;
+    }
+    return false;
+}
+
 fn bindingNameFromAcquireLine(line: []const u8) ?[]const u8 {
     var rest = std.mem.trim(u8, line, " \t");
     if (std.mem.startsWith(u8, rest, "const ")) {
@@ -73,11 +84,102 @@ fn bindingNameFromAcquireLine(line: []const u8) ?[]const u8 {
         name = std.mem.trim(u8, name[0..colon], " \t");
     }
     if (name.len == 0) return null;
-    if (!std.ascii.isAlphabetic(name[0]) and name[0] != '_') return null;
-    for (name[1..]) |c| {
-        if (!std.ascii.isAlphanumeric(c) and c != '_') return null;
-    }
+    if (!isIdent(name)) return null;
     return name;
+}
+
+fn isIdent(name: []const u8) bool {
+    if (name.len == 0) return false;
+    if (!std.ascii.isAlphabetic(name[0]) and name[0] != '_') return false;
+    for (name[1..]) |c| {
+        if (!std.ascii.isAlphanumeric(c) and c != '_') return false;
+    }
+    return true;
+}
+
+fn bodyTransfersBinding(body: []const u8, name: []const u8) bool {
+    if (bodyReturnsBinding(body, name)) return true;
+    if (bodyAssignsBindingToOutParam(body, name)) return true;
+
+    var aliases: [8][]const u8 = undefined;
+    const n = collectOneHopAliases(body, name, &aliases);
+    for (aliases[0..n]) |alias| {
+        if (bodyReturnsBinding(body, alias)) return true;
+        if (bodyAssignsBindingToOutParam(body, alias)) return true;
+    }
+    return false;
+}
+
+fn collectOneHopAliases(body: []const u8, name: []const u8, out: *[8][]const u8) usize {
+    var n: usize = 0;
+    var i: usize = 0;
+    while (i < body.len and n < out.len) {
+        const rest = body[i..];
+        const kw_len: usize = if (std.mem.startsWith(u8, rest, "const "))
+            "const ".len
+        else if (std.mem.startsWith(u8, rest, "var "))
+            "var ".len
+        else {
+            i += 1;
+            continue;
+        };
+        if (i > 0) {
+            const prev = body[i - 1];
+            if (std.ascii.isAlphanumeric(prev) or prev == '_') {
+                i += 1;
+                continue;
+            }
+        }
+
+        var j = i + kw_len;
+        while (j < body.len and std.ascii.isWhitespace(body[j])) : (j += 1) {}
+        const name_start = j;
+        const name_end = identEnd(body, name_start);
+        if (name_end == name_start) {
+            i += 1;
+            continue;
+        }
+        const alias = body[name_start..name_end];
+        j = name_end;
+        while (j < body.len and std.ascii.isWhitespace(body[j])) : (j += 1) {}
+        if (j < body.len and body[j] == ':') {
+            j += 1;
+            while (j < body.len and body[j] != '=' and body[j] != ';' and body[j] != '\n') : (j += 1) {}
+        }
+        while (j < body.len and std.ascii.isWhitespace(body[j])) : (j += 1) {}
+        if (j >= body.len or body[j] != '=') {
+            i += 1;
+            continue;
+        }
+        j += 1;
+        while (j < body.len and std.ascii.isWhitespace(body[j])) : (j += 1) {}
+        if (!std.mem.startsWith(u8, body[j..], name)) {
+            i += 1;
+            continue;
+        }
+        const after = j + name.len;
+        if (after < body.len) {
+            const next = body[after];
+            // Reject `const alias = buffer.len` / `buffer[0]` / `buffer_more`.
+            if (next == '.' or next == '[' or std.ascii.isAlphanumeric(next) or next == '_') {
+                i += 1;
+                continue;
+            }
+        }
+        out[n] = alias;
+        n += 1;
+        i = after;
+    }
+    return n;
+}
+
+fn identEnd(source: []const u8, start: usize) usize {
+    var i = start;
+    while (i < source.len) : (i += 1) {
+        const c = source[i];
+        if (!std.ascii.isAlphanumeric(c) and c != '_') break;
+    }
+    return i;
 }
 
 fn bodyReturnsBinding(body: []const u8, name: []const u8) bool {
@@ -96,6 +198,28 @@ fn bodyReturnsBinding(body: []const u8, name: []const u8) bool {
         if (end < body.len) {
             const next = body[end];
             // `return buffer.len` / `return buffer[0]` are not ownership transfers.
+            if (next == '.' or next == '[') continue;
+            if (std.ascii.isAlphanumeric(next) or next == '_') continue;
+        }
+        return true;
+    }
+    return false;
+}
+
+fn bodyAssignsBindingToOutParam(body: []const u8, name: []const u8) bool {
+    // `out.* = buffer;` / `dest.* = buffer`
+    var i: usize = 0;
+    while (i < body.len) : (i += 1) {
+        if (!std.mem.startsWith(u8, body[i..], ".*")) continue;
+        var j = i + ".*".len;
+        while (j < body.len and std.ascii.isWhitespace(body[j])) : (j += 1) {}
+        if (j >= body.len or body[j] != '=') continue;
+        j += 1;
+        while (j < body.len and std.ascii.isWhitespace(body[j])) : (j += 1) {}
+        if (!std.mem.startsWith(u8, body[j..], name)) continue;
+        const end = j + name.len;
+        if (end < body.len) {
+            const next = body[end];
             if (next == '.' or next == '[') continue;
             if (std.ascii.isAlphanumeric(next) or next == '_') continue;
         }
@@ -130,6 +254,24 @@ test "leaky local alloc is flagged; defer free and return-transfer are not" {
         \\    return buffer;
         \\}
     ;
+    const alias_transfer_src =
+        \\pub fn giveAlias(allocator: anytype, n: usize) ![]u8 {
+        \\    const buffer = try allocator.alloc(u8, n);
+        \\    const owned = buffer;
+        \\    return owned;
+        \\}
+    ;
+    const out_param_src =
+        \\pub fn fill(allocator: anytype, n: usize, out: *[]u8) !void {
+        \\    const buffer = try allocator.alloc(u8, n);
+        \\    out.* = buffer;
+        \\}
+    ;
+    const out_param_direct_src =
+        \\pub fn fillDirect(allocator: anytype, n: usize, out: *[]u8) !void {
+        \\    out.* = try allocator.alloc(u8, n);
+        \\}
+    ;
 
     var fail_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
     defer fail_diags.deinit(gpa);
@@ -150,6 +292,21 @@ test "leaky local alloc is flagged; defer free and return-transfer are not" {
     defer local_transfer_diags.deinit(gpa);
     try analyzeSource("local_transfer.zig", local_transfer_src, &local_transfer_diags, gpa);
     try std.testing.expect(local_transfer_diags.items.len == 0);
+
+    var alias_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer alias_diags.deinit(gpa);
+    try analyzeSource("alias.zig", alias_transfer_src, &alias_diags, gpa);
+    try std.testing.expect(alias_diags.items.len == 0);
+
+    var out_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer out_diags.deinit(gpa);
+    try analyzeSource("out.zig", out_param_src, &out_diags, gpa);
+    try std.testing.expect(out_diags.items.len == 0);
+
+    var out_direct_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer out_direct_diags.deinit(gpa);
+    try analyzeSource("out_direct.zig", out_param_direct_src, &out_direct_diags, gpa);
+    try std.testing.expect(out_direct_diags.items.len == 0);
 
     const comment_src =
         \\pub fn documented() void {

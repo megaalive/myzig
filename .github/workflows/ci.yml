@@ -60,6 +60,8 @@ jobs:
           # Pass fixture must be clean.
           "$BIN" check fixtures/pass/alloc_defer_free.zig
           "$BIN" check fixtures/pass/alloc_return_local.zig
+          "$BIN" check fixtures/pass/alloc_return_alias.zig
+          "$BIN" check fixtures/pass/alloc_out_param.zig
           "$BIN" check fixtures/pass/file_defer_close.zig
           "$BIN" check fixtures/pass/ptrcast_remarked.zig
           if "$BIN" check fixtures/fail/file_undischarged.zig; then
@@ -149,3 +151,7 @@ jobs:
           test "$code" -ne 0
           grep -q '"ruleId": "memory.alloc-undischarged"' sarif.json
           grep -q '"version": "2.1.0"' sarif.json
+          grep -q '"ruleIndex"' sarif.json
+          grep -q 'primaryLocationLineHash' sarif.json
+          grep -q '"automationDetails"' sarif.json
+          grep -q 'helpUri' sarif.json

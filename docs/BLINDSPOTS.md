@@ -9,8 +9,8 @@ myzig's early detectors are **local heuristics**, not whole-program proof.
 | Area | Limitation |
 |------|------------|
 | Path sensitivity | Conditional free/close may be treated as function-wide discharge |
-| Transfers | Direct `return …alloc/create/dupe` and simple `const x = try …alloc; return x;` are tracked; aliases / out-params still weak |
-| Aliasing | Renames / wrappers around allocator APIs are invisible |
+| Transfers | Direct `return …alloc`, local return, one-hop rename return, and `out.* = …` / `out.* = try …alloc` are tracked; multi-hop / wrapper APIs still weak |
+| Aliasing | Only one-hop `const alias = buf;` (exact RHS) is followed; deeper aliases / wrappers around allocator APIs stay invisible |
 | Cross-function | Callee frees / ownership handoff across functions are out of scope |
 | Arenas | Arena-scoped lifetimes are not modeled beyond coarse `defer …deinit` discharge (see `AZIG-OWN-001`) |
 | Zig AST/ZIR | Token/text scan, not Zig Ast or ZIR CFG (zwanzig-class analysis) |
@@ -18,7 +18,7 @@ myzig's early detectors are **local heuristics**, not whole-program proof.
 | Compat preference | `compat.volatile-std` is opt-in (`--prefer-compat` / `.myzig/prefer_compat`) |
 | Adapter paths | Volatile-std detector skips `compat/` sources by path heuristic |
 | Comments | Needle hits after `//` on the same line are ignored (M7 FP guard) |
-| SARIF | `myzig check --sarif` / `rules --sarif` emit minimal SARIF 2.1.0 (not a full CodeQL profile) |
+| SARIF | Forge-oriented SARIF 2.1.0 (`ruleIndex`, `partialFingerprints`, `automationDetails`, `helpUri`); not a full CodeQL profile |
 
 ## Product stance
 

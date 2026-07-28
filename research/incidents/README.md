@@ -15,6 +15,7 @@ Rules (and compat/contract improvements) are born from incidents.
 |----|------|
 | `MYZIG-OWN-001` | Fixture alloc undischarged loop |
 | `AZIG-OWN-001` | Arena + coarse defer discharge limits |
+| `AZIG-OWN-002` | Out-param / one-hop rename transfers |
 | `ZRIG-DOGFOOD-001` | Clean prefer-compat ratchet baseline |
 | `AGENT-STD-001` / `002` | std churn → compat + volatile rule |
 | `AGENT-CLI-001` / `002` | Clean exits; exhaustive CLI / witness hash |

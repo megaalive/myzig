@@ -19,3 +19,9 @@ Desktop.ini
 receipt.json
 receipt-out.json
 
+
+adopt.out
+receipt-cost.json
+sarif.json
+smoke-trace.txt
+

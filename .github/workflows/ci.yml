@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: mlugg/setup-zig@v2
+        with:
+          # Keep in sync with build.zig.zon minimum_zig_version.
+          version: "0.17.0-dev.1099+7db2ef610"
+          cache-key: ${{ matrix.os }}
+
+      - name: zig version
+        run: zig version
+
+      - name: Format check
+        if: matrix.os == 'ubuntu-latest'
+        run: zig fmt --check src build.zig
+
+      - name: Build
+        run: zig build
+
+      - name: Test
+        run: zig build test
+
+      - name: CLI smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          zig build run -- version
+          zig build run -- rules --json | head -n 5
+          zig build run -- init
+          test -f .myzig/README.md

@@ -191,9 +191,9 @@ pub const seed_alloc_undischarged: Rule = .{
     },
     .message = "allocated memory may leave the function without release or transfer",
     .explanation =
-        \\An allocation creates an ownership obligation: the memory must be
-        \\released, destroyed, deinited, or explicitly transferred. Early myzig
-        \\analysis is local and reports this as `likely`, not `proven`.
+    \\An allocation creates an ownership obligation: the memory must be
+    \\released, destroyed, deinited, or explicitly transferred. Early myzig
+    \\analysis is local and reports this as `likely`, not `proven`.
     ,
     .repairs = &.{
         .{

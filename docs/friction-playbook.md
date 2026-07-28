@@ -683,9 +683,23 @@ elease already helps
 ### F-HARNESS-013 · `ask --mcp` is double-`--` + one session
 - **symptom:** Agents invent `--mcp-server=` flags or spawn a new MCP process per tool call in ask
 - **do:** `zrig ask … --allow proc.spawn --mcp -- <server…> -- <prompt>`; check receipt `tool_steps[].via == "mcp"`. See zrig `docs/ask.md` / F-ZRIG-013
-- **don't:** Put prompt before the second `--`; don't expect `tools/list` merged into the model catalog yet
+- **don't:** Put prompt before the second `--`
 - **promote-to-code-when:** already promoted → ask `--mcp` + CI ask-mcp-receipt
 - **incident:** ZRIG-DOGFOOD-014
+
+### F-HARNESS-014 · `--mcp` uses remote `tools/list` as the model catalog
+- **symptom:** Agents assume local registry tools are still advertised under `--mcp`
+- **do:** Expect receipt `tools_source=mcp` and `tools_offered` from list; mock refuses unknown catalog names
+- **don't:** Mix local-only tool names with `--mcp` without checking list
+- **promote-to-code-when:** already promoted → turn listTools + CI greps
+- **incident:** ZRIG-DOGFOOD-015
+
+### F-HARNESS-015 · V6 plan-first / checkpoint / skills
+- **symptom:** Agents skip `--approve`, misuse `--resume`, or invent skill formats
+- **do:** `plan-first` + `--approve`; `--checkpoint`/`--resume`; skills = `.zrig/skills/*/SKILL.md` or `--skills-dir` (`docs/V6.md`)
+- **don't:** Expect streaming or Content-Length MCP yet
+- **promote-to-code-when:** already promoted → agent/skills + CI smokes
+- **incident:** ZRIG-DOGFOOD-016
 
 ### F-OWN-068 · Comment-only `catch` must not hide `};`
 - **symptom:** `expected ';' after statement` after documenting empty `catch {}` for swallow-error

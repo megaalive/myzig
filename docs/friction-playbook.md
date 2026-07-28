@@ -118,3 +118,10 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **don't:** Place the remark several lines away and expect discharge
 - **promote-to-code-when:** already promoted → adjacent permit scan (`AZIG-OWN-005`)
 - **incident:** AZIG-OWN-005
+
+### F-OWN-005 · Returned struct fields take ownership
+- **symptom:** `return .{ .id = try allocator.dupe(...) }` flagged as undischarged
+- **do:** Prefer constructing owned structs in `return .{ ... }`; document who frees (`deinit`)
+- **don't:** Add local `defer free` on a field that was returned to the caller
+- **promote-to-code-when:** already promoted → returned-struct acquire span (`AZIG-OWN-006`)
+- **incident:** AZIG-OWN-006

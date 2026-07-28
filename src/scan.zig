@@ -132,7 +132,7 @@ fn identEnd(source: []const u8, start: usize) usize {
     return i;
 }
 
-fn matchingBrace(source: []const u8, open: usize) ?usize {
+pub fn matchingBrace(source: []const u8, open: usize) ?usize {
     if (open >= source.len or source[open] != '{') return null;
     var depth: i32 = 0;
     var i = open;

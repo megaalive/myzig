@@ -20,6 +20,9 @@ Rules (and compat/contract improvements) are born from incidents.
 | `AZIG-OWN-003` | `allocPrint` / related acquires were invisible |
 | `AZIG-OWN-004` | `list.append(try dupe)` collection transfer |
 | `AZIG-OWN-005` | Adjacent-line ptrcast permits |
+| `AZIG-OWN-006` | `return .{ .field = try dupe }` struct transfer |
+| `AZIG-OWN-007` | Assignment retarget `out = next; return out` |
+| `AZIG-OWN-008` | Azig memory-clean; remaining ptrcast remarks are product hygiene |
 | `ZRIG-DOGFOOD-001` | Clean prefer-compat ratchet baseline |
 | `AGENT-STD-001` / `002` | std churn → compat + volatile rule |
 | `AGENT-CLI-001` / `002` | Clean exits; exhaustive CLI / witness hash |

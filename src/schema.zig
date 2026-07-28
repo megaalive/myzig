@@ -225,6 +225,8 @@ pub const seed_alloc_undischarged: Rule = .{
         "fixtures/pass/alloc_print_return.zig",
         "fixtures/pass/alloc_return_chain.zig",
         "fixtures/pass/alloc_append_transfer.zig",
+        "fixtures/pass/alloc_struct_return.zig",
+        "fixtures/pass/alloc_retarget.zig",
         "fixtures/fail/alloc_print_undischarged.zig",
         "fixtures/fail/alloc_concat_undischarged.zig",
         "research/incidents/MYZIG-OWN-001.md",
@@ -232,6 +234,8 @@ pub const seed_alloc_undischarged: Rule = .{
         "research/incidents/AZIG-OWN-002.md",
         "research/incidents/AZIG-OWN-003.md",
         "research/incidents/AZIG-OWN-004.md",
+        "research/incidents/AZIG-OWN-006.md",
+        "research/incidents/AZIG-OWN-007.md",
     },
 };
 

@@ -77,6 +77,8 @@ jobs:
           "$BIN" check fixtures/pass/alloc_explicit_free.zig
           "$BIN" check fixtures/pass/alloc_print_return.zig
           "$BIN" check fixtures/pass/alloc_append_transfer.zig
+          "$BIN" check fixtures/pass/alloc_struct_return.zig
+          "$BIN" check fixtures/pass/alloc_retarget.zig
           "$BIN" check fixtures/pass/file_defer_close.zig
           "$BIN" check fixtures/pass/file_return.zig
           "$BIN" check fixtures/pass/ptrcast_remarked.zig

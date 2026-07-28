@@ -43,9 +43,11 @@ pub fn analyzeSource(
             }
             const line_slice = scan.lineSlice(source, abs_index);
             const binding = bindingNameFromAcquireLine(line_slice);
+            const hit_in_body = hit; // relative to body
             const transferred = isReturnTransferLine(line_slice) or
                 isOutParamAcquireLine(line_slice) or
                 isCollectionTransferLine(line_slice) or
+                acquireInReturnedStructLiteral(body, hit_in_body) or
                 (binding != null and bodyTransfersBinding(body, binding.?));
             const released = binding != null and bodyReleasesBindingTree(body, binding.?);
             const discharged = transferred or released or has_defer_discharge;
@@ -101,6 +103,26 @@ fn isCollectionTransferLine(line: []const u8) bool {
     return false;
 }
 
+/// Acquires used as field initializers inside `return .{ ... }` transfer to the caller.
+fn acquireInReturnedStructLiteral(body: []const u8, rel_index: usize) bool {
+    var i: usize = 0;
+    while (i < rel_index) : (i += 1) {
+        if (!std.mem.startsWith(u8, body[i..], "return")) continue;
+        if (i > 0) {
+            const prev = body[i - 1];
+            if (std.ascii.isAlphanumeric(prev) or prev == '_') continue;
+        }
+        var j = i + "return".len;
+        if (j < body.len and (std.ascii.isAlphanumeric(body[j]) or body[j] == '_')) continue;
+        while (j < body.len and std.ascii.isWhitespace(body[j])) : (j += 1) {}
+        if (!std.mem.startsWith(u8, body[j..], ".{")) continue;
+        const open = j + 1;
+        const close = scan.matchingBrace(body, open) orelse continue;
+        if (rel_index > open and rel_index < close) return true;
+    }
+    return false;
+}
+
 fn bindingNameFromAcquireLine(line: []const u8) ?[]const u8 {
     var rest = std.mem.trim(u8, line, " \t");
     if (std.mem.startsWith(u8, rest, "const ")) {
@@ -134,6 +156,46 @@ fn bodyTransfersBinding(body: []const u8, name: []const u8) bool {
     for (names[0..n]) |id| {
         if (bodyReturnsBinding(body, id)) return true;
         if (bodyAssignsBindingToOutParam(body, id)) return true;
+        if (bindingUsedInReturnedStructField(body, id)) return true;
+    }
+    return false;
+}
+
+fn bindingUsedInReturnedStructField(body: []const u8, name: []const u8) bool {
+    var i: usize = 0;
+    while (i < body.len) : (i += 1) {
+        if (!std.mem.startsWith(u8, body[i..], "return")) continue;
+        if (i > 0) {
+            const prev = body[i - 1];
+            if (std.ascii.isAlphanumeric(prev) or prev == '_') continue;
+        }
+        var j = i + "return".len;
+        if (j < body.len and (std.ascii.isAlphanumeric(body[j]) or body[j] == '_')) continue;
+        while (j < body.len and std.ascii.isWhitespace(body[j])) : (j += 1) {}
+        if (!std.mem.startsWith(u8, body[j..], ".{")) continue;
+        const open = j + 1;
+        const close = scan.matchingBrace(body, open) orelse continue;
+        const span = body[open .. close + 1];
+        if (identAssignedInSpan(span, name)) return true;
+    }
+    return false;
+}
+
+fn identAssignedInSpan(span: []const u8, name: []const u8) bool {
+    var i: usize = 0;
+    while (i < span.len) : (i += 1) {
+        if (span[i] != '=') continue;
+        if (i + 1 < span.len and (span[i + 1] == '=' or span[i + 1] == '>')) continue;
+        if (i > 0 and (span[i - 1] == '!' or span[i - 1] == '<' or span[i - 1] == '>' or span[i - 1] == '=')) continue;
+        var j = i + 1;
+        while (j < span.len and std.ascii.isWhitespace(span[j])) : (j += 1) {}
+        if (!std.mem.startsWith(u8, span[j..], name)) continue;
+        const end = j + name.len;
+        if (end < span.len) {
+            const next = span[end];
+            if (next == '.' or next == '[' or std.ascii.isAlphanumeric(next) or next == '_') continue;
+        }
+        return true;
     }
     return false;
 }
@@ -189,18 +251,71 @@ fn collectAliasClosure(body: []const u8, root: []const u8, out: *[8][]const u8) 
         var hop: [8][]const u8 = undefined;
         const hn = collectOneHopAliases(body, out[i], &hop);
         for (hop[0..hn]) |alias| {
-            var seen = false;
-            for (out[0..n]) |existing| {
-                if (std.mem.eql(u8, existing, alias)) {
-                    seen = true;
-                    break;
-                }
+            if (!aliasListContains(out[0..n], alias)) {
+                if (n >= out.len) return n;
+                out[n] = alias;
+                n += 1;
             }
-            if (seen) continue;
-            if (n >= out.len) return n;
-            out[n] = alias;
-            n += 1;
         }
+        var assigns: [8][]const u8 = undefined;
+        const an = collectAssignmentAliases(body, out[i], &assigns);
+        for (assigns[0..an]) |alias| {
+            if (!aliasListContains(out[0..n], alias)) {
+                if (n >= out.len) return n;
+                out[n] = alias;
+                n += 1;
+            }
+        }
+    }
+    return n;
+}
+
+fn aliasListContains(list: []const []const u8, name: []const u8) bool {
+    for (list) |existing| {
+        if (std.mem.eql(u8, existing, name)) return true;
+    }
+    return false;
+}
+
+/// `out = next;` — ownership retarget (exact RHS ident).
+fn collectAssignmentAliases(body: []const u8, name: []const u8, out: *[8][]const u8) usize {
+    var n: usize = 0;
+    var i: usize = 0;
+    while (i < body.len and n < out.len) : (i += 1) {
+        if (body[i] != '=') continue;
+        if (i + 1 < body.len and (body[i + 1] == '=' or body[i + 1] == '>')) continue;
+        if (i > 0 and (body[i - 1] == '!' or body[i - 1] == '<' or body[i - 1] == '>' or body[i - 1] == '=')) continue;
+
+        // LHS ident immediately before `=`
+        var lhs_end = i;
+        while (lhs_end > 0 and std.ascii.isWhitespace(body[lhs_end - 1])) : (lhs_end -= 1) {}
+        var lhs_start = lhs_end;
+        while (lhs_start > 0) {
+            const c = body[lhs_start - 1];
+            if (std.ascii.isAlphanumeric(c) or c == '_') {
+                lhs_start -= 1;
+                continue;
+            }
+            break;
+        }
+        if (lhs_start == lhs_end) continue;
+        const lhs = body[lhs_start..lhs_end];
+        if (!isIdent(lhs)) continue;
+        // Avoid matching `.field = name` as a new owning binding name starting with field —
+        // still OK: field store is not a local binding transfer via return of field.
+        // Skip if LHS is preceded by `.`
+        if (lhs_start > 0 and body[lhs_start - 1] == '.') continue;
+
+        var j = i + 1;
+        while (j < body.len and std.ascii.isWhitespace(body[j])) : (j += 1) {}
+        if (!std.mem.startsWith(u8, body[j..], name)) continue;
+        const end = j + name.len;
+        if (end < body.len) {
+            const next = body[end];
+            if (next == '.' or next == '[' or std.ascii.isAlphanumeric(next) or next == '_') continue;
+        }
+        out[n] = lhs;
+        n += 1;
     }
     return n;
 }
@@ -410,6 +525,30 @@ test "leaky local alloc is flagged; defer free and return-transfer are not" {
         \\    return s.len;
         \\}
     ;
+    const struct_return_src =
+        \\pub fn buat(allocator: anytype, s: []const u8) !struct { id: []u8 } {
+        \\    return .{
+        \\        .id = try allocator.dupe(u8, s),
+        \\    };
+        \\}
+    ;
+    const struct_binding_src =
+        \\pub fn buatList(allocator: anytype, n: usize) !struct { pesan: []u8 } {
+        \\    const daftar = try allocator.alloc(u8, n);
+        \\    return .{
+        \\        .pesan = daftar,
+        \\    };
+        \\}
+    ;
+    const retarget_src =
+        \\pub fn trimCopy(allocator: anytype, teks: []const u8) ![]u8 {
+        \\    var out = try allocator.dupe(u8, teks);
+        \\    const next = try allocator.dupe(u8, teks[1..]);
+        \\    allocator.free(out);
+        \\    out = next;
+        \\    return out;
+        \\}
+    ;
 
     var fail_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
     defer fail_diags.deinit(gpa);
@@ -480,6 +619,21 @@ test "leaky local alloc is flagged; defer free and return-transfer are not" {
     defer concat_fail_diags.deinit(gpa);
     try analyzeSource("concat_fail.zig", concat_fail_src, &concat_fail_diags, gpa);
     try std.testing.expect(concat_fail_diags.items.len >= 1);
+
+    var struct_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer struct_diags.deinit(gpa);
+    try analyzeSource("struct.zig", struct_return_src, &struct_diags, gpa);
+    try std.testing.expect(struct_diags.items.len == 0);
+
+    var struct_bind_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer struct_bind_diags.deinit(gpa);
+    try analyzeSource("struct_bind.zig", struct_binding_src, &struct_bind_diags, gpa);
+    try std.testing.expect(struct_bind_diags.items.len == 0);
+
+    var retarget_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer retarget_diags.deinit(gpa);
+    try analyzeSource("retarget.zig", retarget_src, &retarget_diags, gpa);
+    try std.testing.expect(retarget_diags.items.len == 0);
 
     const comment_src =
         \\pub fn documented() void {

@@ -42,13 +42,15 @@ Also see `docs/BLINDSPOTS.md` (analyzer detail) and `docs/friction-playbook.md`.
 - Rename chains (`a → b → c`) are followed for transfer/free (bounded closure).
 - Same-line `list.append(try …dupe/alloc…)` counts as collection transfer (`AZIG-OWN-004`).
 - `@ptrCast` / `@alignCast` permits may sit on the previous/current/next line (`AZIG-OWN-005`).
+- Field initializers inside `return .{ ... }` count as transfer (`AZIG-OWN-006`), including `const x = try …; return .{ .f = x }`.
+- Exact assignment retarget `out = next` joins the alias closure (`AZIG-OWN-007`).
 
 ## Dogfood snapshot
 
 | Project | Note |
 |---------|------|
 | zrig | `check --prefer-compat --ratchet src` held at 0 findings (see `ZRIG-DOGFOOD-001`) |
-| azig | Arena-heavy modules illustrate coarse `defer deinit` discharge (`AZIG-OWN-001`) |
+| azig | Memory heuristics calibrated to **0** alloc findings on `src/`; leftover is ptrcast remarks (`AZIG-OWN-008`) + arena coarseness (`AZIG-OWN-001`) |
 
 ## Product stance
 

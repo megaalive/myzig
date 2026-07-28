@@ -615,9 +615,9 @@ elease already helps
 - **promote-to-code-when:** already promoted → receipt schema 0.0.1 + V2 docs
 - **incident:** ZRIG-DOGFOOD-006
 
-### F-HARNESS-006 · MCP scaffold is not stdio JSON-RPC yet
-- **symptom:** Agents wire a full MCP client to `zrig mcp serve` and hang / misparse
-- **do:** Use `zrig mcp list` / `mcp call` (or `zrig agent`) until docs/V3.md marks stdio ready
-- **don't:** Treat the serve stub as a live MCP server
-- **promote-to-code-when:** when stdio JSON-RPC ships → update this tip + V3 success criteria
+### F-HARNESS-006 · MCP stdio is tools-only JSON-RPC
+- **symptom:** Client expects resources/prompts/SSE, or hangs waiting for HTTP
+- **do:** Point hosts at `zrig mcp serve` (stdio). Use `examples/mcp-smoke.jsonl` / `docs/mcp-client.md`. Pass args as `{"args":[...]}`. Grant caps via `.zrig/capabilities`, `ZRIG_ALLOW`, or `serve --allow`
+- **don't:** Expect Streamable HTTP, OAuth, or V4 model routing from zrig yet
+- **promote-to-code-when:** already promoted → stdio `initialize`/`tools/*` in `src/mcp.zig`
 - **incident:** ZRIG-DOGFOOD-007

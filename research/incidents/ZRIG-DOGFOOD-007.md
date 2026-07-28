@@ -1,19 +1,22 @@
-# ZRIG-DOGFOOD-007 — MCP serve is a scaffold stub
+# ZRIG-DOGFOOD-007 — MCP serve stdio (updated)
 
 ## Context
 
-V3 starts with `zrig mcp list` / `call` / `serve`. Agents may assume `serve`
-speaks MCP JSON-RPC over stdio immediately.
+V3 started as `list` / `call` plus an honest `serve` stub. Agents must not treat
+a stub as live MCP, and once stdio ships they must not expect full MCP feature
+surface (resources, HTTP, OAuth, router).
 
 ## Observation
 
-`serve` prints an honest stub pointing at `docs/V3.md`. Real stdio protocol is
-explicitly out of the scaffold slice.
+`zrig mcp serve` now speaks newline-delimited JSON-RPC for `initialize`,
+`tools/list`, `tools/call`, and `ping`. Capability denials return
+`isError: true` without killing the server. V4 router stays locked in
+`docs/V4.md`.
 
 ## Friction tip
 
-`F-HARNESS-006` in `docs/friction-playbook.md`.
+`F-HARNESS-006` in `docs/friction-playbook.md` (stdio tools-only).
 
 ## Promotion
 
-Keep as playbook until JSON-RPC lands; then flip the tip and V3 success criteria.
+Stdio handlers in zrig `src/mcp.zig`; CI pipes `examples/mcp-smoke.jsonl`.

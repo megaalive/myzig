@@ -57,7 +57,7 @@ pub fn analyzeSource(
                 isFieldStoreTransferLine(line_slice) or
                 isArenaBackedAcquireLine(line_slice) or
                 acquireInReturnedStructLiteral(body, hit_in_body) or
-                (binding != null and bodyTransfersBinding(body, binding.?));
+                (binding != null and bodyTransfersBinding(source, funcs.items, body, binding.?));
             const released = binding != null and bodyReleasesBindingTree(body, binding.?);
             const discharged = transferred or released or has_defer_discharge;
             if (!discharged) {
@@ -256,7 +256,17 @@ fn isIdent(name: []const u8) bool {
     return true;
 }
 
-fn bodyTransfersBinding(body: []const u8, name: []const u8) bool {
+const ownership_handoff_call_needles = [_][]const u8{
+    "takeOwnership(",
+    "assumeOwnership(",
+    "adoptOwnership(",
+    "intoOwned(",
+    "stealOwnership(",
+    "consumeOwned(",
+    "takeOwned(",
+};
+
+fn bodyTransfersBinding(source: []const u8, funcs: []const scan.Func, body: []const u8, name: []const u8) bool {
     var names: [8][]const u8 = undefined;
     const n = collectAliasClosure(body, name, &names);
     for (names[0..n]) |id| {
@@ -265,8 +275,197 @@ fn bodyTransfersBinding(body: []const u8, name: []const u8) bool {
         if (bindingUsedInReturnedStructField(body, id)) return true;
         if (bindingConsumedByCollectionCall(body, id)) return true;
         if (bindingStoredToField(body, id)) return true;
+        if (bindingPassedToNamedOwnershipCall(body, id)) return true;
+        if (bindingPassedToSameFileFreeingCallee(source, funcs, body, id)) return true;
     }
     return false;
+}
+
+/// Explicit ownership-handoff APIs (`takeOwnership(buf)`, …) — modeled needles only.
+fn bindingPassedToNamedOwnershipCall(body: []const u8, name: []const u8) bool {
+    for (ownership_handoff_call_needles) |needle| {
+        var from: usize = 0;
+        while (from < body.len) {
+            const idx = std.mem.indexOfPos(u8, body, from, needle) orelse break;
+            const open = idx + needle.len - 1;
+            const close = scan.matchingParen(body, open) orelse {
+                from = idx + 1;
+                continue;
+            };
+            const args = body[open + 1 .. close];
+            if (identAppearsInSpan(args, name)) return true;
+            from = close + 1;
+        }
+    }
+    return false;
+}
+
+/// Same-file only: `foo(..., buf)` where `fn foo` frees/destroys the matching parameter.
+fn bindingPassedToSameFileFreeingCallee(
+    source: []const u8,
+    funcs: []const scan.Func,
+    body: []const u8,
+    name: []const u8,
+) bool {
+    var i: usize = 0;
+    while (i < body.len) : (i += 1) {
+        if (body[i] != '(') continue;
+        const callee = calleeIdentBefore(body, i) orelse continue;
+        if (isDischargeCalleeName(callee)) continue;
+        // Skip collection / ownership needles already handled elsewhere.
+        if (isCollectionOrHandoffCallee(callee)) continue;
+
+        const close = scan.matchingParen(body, i) orelse continue;
+        const args = body[i + 1 .. close];
+        const arg_i = argIndexOfIdent(args, name) orelse continue;
+
+        const callee_func = findFuncByName(funcs, callee) orelse continue;
+        const param = paramNameAt(source, callee_func, arg_i) orelse continue;
+        const callee_body = source[callee_func.start .. callee_func.end + 1];
+        if (bodyReleasesBinding(callee_body, param)) return true;
+    }
+    return false;
+}
+
+fn isDischargeCalleeName(name: []const u8) bool {
+    const words = [_][]const u8{ "free", "destroy", "deinit", "release", "unload", "shutdown", "dealloc", "unmap", "cancel", "close" };
+    for (words) |w| {
+        if (std.mem.eql(u8, name, w)) return true;
+    }
+    return false;
+}
+
+fn isCollectionOrHandoffCallee(name: []const u8) bool {
+    const words = [_][]const u8{
+        "append",             "appendSlice",
+        "put",                "putNoClobber", "putAssumeCapacity", "insert",
+        "takeOwnership",      "assumeOwnership", "adoptOwnership",
+        "intoOwned",          "stealOwnership", "consumeOwned", "takeOwned",
+    };
+    for (words) |w| {
+        if (std.mem.eql(u8, name, w)) return true;
+    }
+    return false;
+}
+
+fn calleeIdentBefore(body: []const u8, open_paren: usize) ?[]const u8 {
+    if (open_paren == 0) return null;
+    var j = open_paren;
+    while (j > 0 and std.ascii.isWhitespace(body[j - 1])) : (j -= 1) {}
+    if (j == 0) return null;
+    const end = j;
+    while (j > 0) {
+        const c = body[j - 1];
+        if (!(std.ascii.isAlphanumeric(c) or c == '_')) break;
+        j -= 1;
+    }
+    if (j == end) return null;
+    return body[j..end];
+}
+
+fn argIndexOfIdent(args: []const u8, name: []const u8) ?usize {
+    var index: usize = 0;
+    var depth: i32 = 0;
+    var i: usize = 0;
+    var arg_start: usize = 0;
+    while (i <= args.len) : (i += 1) {
+        const at_end = i == args.len;
+        const c: u8 = if (at_end) ',' else args[i];
+        if (!at_end) {
+            if (c == '(' or c == '{' or c == '[') depth += 1;
+            if (c == ')' or c == '}' or c == ']') depth -= 1;
+        }
+        if (at_end or (c == ',' and depth == 0)) {
+            const span = std.mem.trim(u8, args[arg_start..i], " \t\r\n");
+            if (spanIsExactIdent(span, name)) return index;
+            index += 1;
+            arg_start = i + 1;
+        }
+    }
+    return null;
+}
+
+fn spanIsExactIdent(span: []const u8, name: []const u8) bool {
+    if (!std.mem.eql(u8, span, name)) return false;
+    return isIdent(name);
+}
+
+fn findFuncByName(funcs: []const scan.Func, name: []const u8) ?scan.Func {
+    for (funcs) |f| {
+        if (std.mem.eql(u8, f.name, name)) return f;
+    }
+    return null;
+}
+
+fn paramNameAt(source: []const u8, func: scan.Func, index: usize) ?[]const u8 {
+    // Locate `fn <name>` immediately before this function's body brace.
+    var pos = func.start;
+    while (pos > 0) {
+        pos -= 1;
+        if (!std.mem.startsWith(u8, source[pos..], "fn ")) continue;
+        var name_start = pos + 3;
+        while (name_start < source.len and std.ascii.isWhitespace(source[name_start])) : (name_start += 1) {}
+        const name_end = identEndLocal(source, name_start);
+        if (name_end == name_start) continue;
+        if (!std.mem.eql(u8, source[name_start..name_end], func.name)) continue;
+
+        const sig_open = std.mem.indexOfScalarPos(u8, source, name_end, '(') orelse return null;
+        if (sig_open >= func.start) return null;
+        const sig_close = scan.matchingParen(source, sig_open) orelse return null;
+        if (sig_close >= func.start) return null;
+        const params = source[sig_open + 1 .. sig_close];
+
+        var at: usize = 0;
+        var depth: i32 = 0;
+        var i: usize = 0;
+        var arg_start: usize = 0;
+        while (i <= params.len) : (i += 1) {
+            const at_end = i == params.len;
+            const c: u8 = if (at_end) ',' else params[i];
+            if (!at_end) {
+                if (c == '(' or c == '{' or c == '[') depth += 1;
+                if (c == ')' or c == '}' or c == ']') depth -= 1;
+            }
+            if (at_end or (c == ',' and depth == 0)) {
+                if (at == index) {
+                    const span = std.mem.trim(u8, params[arg_start..i], " \t\r\n");
+                    return firstIdentInParam(span);
+                }
+                at += 1;
+                arg_start = i + 1;
+            }
+        }
+        return null;
+    }
+    return null;
+}
+
+fn firstIdentInParam(span: []const u8) ?[]const u8 {
+    // `buf: []u8` / `comptime T: type` / `allocator: anytype`
+    var i: usize = 0;
+    while (i < span.len) {
+        while (i < span.len and std.ascii.isWhitespace(span[i])) : (i += 1) {}
+        if (i >= span.len) return null;
+        const start = i;
+        const end = identEndLocal(span, start);
+        if (end == start) return null;
+        const word = span[start..end];
+        if (std.mem.eql(u8, word, "comptime") or std.mem.eql(u8, word, "noalias")) {
+            i = end;
+            continue;
+        }
+        return word;
+    }
+    return null;
+}
+
+fn identEndLocal(s: []const u8, start: usize) usize {
+    var i = start;
+    while (i < s.len) : (i += 1) {
+        const c = s[i];
+        if (!(std.ascii.isAlphanumeric(c) or c == '_')) break;
+    }
+    return i;
 }
 
 fn bindingConsumedByCollectionCall(body: []const u8, name: []const u8) bool {
@@ -1004,4 +1203,44 @@ test "leaky local alloc is flagged; defer free and return-transfer are not" {
     defer put_multi_diags.deinit(gpa);
     try analyzeSource("put_multi.zig", put_multi_src, &put_multi_diags, gpa);
     try std.testing.expect(put_multi_diags.items.len == 0);
+
+    const take_ownership_src =
+        \\pub fn give(allocator: anytype, n: usize) !void {
+        \\    const buffer = try allocator.alloc(u8, n);
+        \\    takeOwnership(buffer);
+        \\}
+    ;
+    var take_own_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer take_own_diags.deinit(gpa);
+    try analyzeSource("take_own.zig", take_ownership_src, &take_own_diags, gpa);
+    try std.testing.expect(take_own_diags.items.len == 0);
+
+    const same_file_callee_src =
+        \\fn adoptBuf(allocator: anytype, buf: []u8) void {
+        \\    defer allocator.free(buf);
+        \\    _ = buf;
+        \\}
+        \\pub fn give(allocator: anytype, n: usize) !void {
+        \\    const buffer = try allocator.alloc(u8, n);
+        \\    adoptBuf(allocator, buffer);
+        \\}
+    ;
+    var same_file_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer same_file_diags.deinit(gpa);
+    try analyzeSource("same_file.zig", same_file_callee_src, &same_file_diags, gpa);
+    try std.testing.expect(same_file_diags.items.len == 0);
+
+    const same_file_no_free_src =
+        \\fn peek(buf: []u8) void {
+        \\    _ = buf;
+        \\}
+        \\pub fn leaky(allocator: anytype, n: usize) !void {
+        \\    const buffer = try allocator.alloc(u8, n);
+        \\    peek(buffer);
+        \\}
+    ;
+    var same_file_nofree_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer same_file_nofree_diags.deinit(gpa);
+    try analyzeSource("same_file_nofree.zig", same_file_no_free_src, &same_file_nofree_diags, gpa);
+    try std.testing.expect(same_file_nofree_diags.items.len >= 1);
 }

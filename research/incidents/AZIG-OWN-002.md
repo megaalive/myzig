@@ -35,4 +35,5 @@ did not implement it.
 ## False-positive / fitting risk
 
 Do not treat `out.* = buf.len` or `const alias = buf.len` as transfers.
-Do not claim wrapper APIs (`takeOwnership(buf)`) transfer without explicit modeling.
+Named wrapper handoffs (`takeOwnership(buf)`, …) and same-file callees that free
+the matching parameter are modeled (`MYZIG-OWN-004`); arbitrary `foo(buf)` is not.

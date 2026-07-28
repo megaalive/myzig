@@ -63,7 +63,7 @@ Also see `docs/BLINDSPOTS.md` (analyzer detail) and `docs/friction-playbook.md`.
 - Kernel PMM/VMM/guest-quota patterns stay playbook (`EXT-STUDY-037`..`042`).
 - Async/net/wasm/image/crypto/tooling tips: `EXT-STUDY-043`..`054` (named shortlists must be finished in-batch).
 - UEFI/HV/OS cadangan + clone-blocker process: `EXT-STUDY-055`..`063` (optional/cadangan names count; API survey when clone fails).
-- Cross-function callee free / opaque `takeOwnership(buf)` remain out of scope (`MYZIG-OWN-003` boundary).
+- Named ownership handoffs (`takeOwnership` / `assumeOwnership` / …) and same-file callees that free the matching parameter count as transfer (`MYZIG-OWN-004`); other-file callees and arbitrary `foo(buf)` do not.
 
 ## Dogfood snapshot
 

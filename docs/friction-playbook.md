@@ -560,3 +560,10 @@ elease already helps
 - **don't:** Import C-runtime APIs into seed detectors; prefer pure-Zig servers for GPA/arena templates
 - **promote-to-code-when:** study boundary
 - **incident:** EXT-STUDY-063
+
+### F-OWN-065 · Named handoff or same-file freeing callee transfers
+- **symptom:** `takeOwnership(buf)` or `adoptBuf(allocator, buf)` (callee frees) flagged as undischarged
+- **do:** Use a named handoff API myzig knows, or keep the freeing helper in the same file; otherwise free/transfer locally
+- **don't:** Expect arbitrary `foo(buf)` or other-file callees to discharge the acquire
+- **promote-to-code-when:** already promoted → handoff needles + same-file callee free
+- **incident:** MYZIG-OWN-004

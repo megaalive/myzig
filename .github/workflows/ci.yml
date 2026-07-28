@@ -15,6 +15,9 @@ jobs:
     name: ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
     strategy:
       fail-fast: false
       matrix:
@@ -62,7 +65,9 @@ jobs:
           "$BIN" check fixtures/pass/alloc_return_local.zig
           "$BIN" check fixtures/pass/alloc_return_alias.zig
           "$BIN" check fixtures/pass/alloc_out_param.zig
+          "$BIN" check fixtures/pass/alloc_explicit_free.zig
           "$BIN" check fixtures/pass/file_defer_close.zig
+          "$BIN" check fixtures/pass/file_return.zig
           "$BIN" check fixtures/pass/ptrcast_remarked.zig
           if "$BIN" check fixtures/fail/file_undischarged.zig; then
             echo "expected file finding" >&2
@@ -155,3 +160,11 @@ jobs:
           grep -q 'primaryLocationLineHash' sarif.json
           grep -q '"automationDetails"' sarif.json
           grep -q 'helpUri' sarif.json
+
+      - name: Upload SARIF (ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: sarif.json
+          category: myzig

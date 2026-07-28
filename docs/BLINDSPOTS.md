@@ -9,8 +9,9 @@ myzig's early detectors are **local heuristics**, not whole-program proof.
 | Area | Limitation |
 |------|------------|
 | Path sensitivity | Conditional free/close may be treated as function-wide discharge |
-| Transfers | Direct `return …alloc`, local return, one-hop rename return, and `out.* = …` / `out.* = try …alloc` are tracked; multi-hop / wrapper APIs still weak |
-| Aliasing | Only one-hop `const alias = buf;` (exact RHS) is followed; deeper aliases / wrappers around allocator APIs stay invisible |
+| Transfers | Direct `return …alloc`, local return, one-hop rename, out-params, and file-handle returns are tracked; multi-hop / wrapper APIs still weak |
+| Aliasing | Only one-hop `const alias = buf;` (exact RHS) is followed for transfer/free; deeper aliases stay invisible |
+| Local free | `.free(name)` / `.destroy(name)` / `name.deinit(` discharge that binding; coarse function-wide `defer …deinit/free` remains for arena-style sites |
 | Cross-function | Callee frees / ownership handoff across functions are out of scope |
 | Arenas | Arena-scoped lifetimes are not modeled beyond coarse `defer …deinit` discharge (see `AZIG-OWN-001`) |
 | Zig AST/ZIR | Token/text scan, not Zig Ast or ZIR CFG (zwanzig-class analysis) |
@@ -18,7 +19,7 @@ myzig's early detectors are **local heuristics**, not whole-program proof.
 | Compat preference | `compat.volatile-std` is opt-in (`--prefer-compat` / `.myzig/prefer_compat`) |
 | Adapter paths | Volatile-std detector skips `compat/` sources by path heuristic |
 | Comments | Needle hits after `//` on the same line are ignored (M7 FP guard) |
-| SARIF | Forge-oriented SARIF 2.1.0 (`ruleIndex`, `partialFingerprints`, `automationDetails`, `helpUri`); not a full CodeQL profile |
+| SARIF | Forge-oriented SARIF 2.1.0 (`ruleIndex`, fingerprints, `automationDetails`, `helpUri`); CI may upload on ubuntu (`continue-on-error`) |
 
 ## Product stance
 

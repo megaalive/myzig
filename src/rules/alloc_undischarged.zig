@@ -34,7 +34,8 @@ pub fn analyzeSource(
             const transferred = isReturnTransferLine(line_slice) or
                 isOutParamAcquireLine(line_slice) or
                 (binding != null and bodyTransfersBinding(body, binding.?));
-            const discharged = transferred or has_defer_discharge;
+            const released = binding != null and bodyReleasesBindingTree(body, binding.?);
+            const discharged = transferred or released or has_defer_discharge;
             if (!discharged) {
                 try out.append(gpa, diagnostic.Diagnostic.fromRule(
                     schema.seed_alloc_undischarged,
@@ -106,6 +107,50 @@ fn bodyTransfersBinding(body: []const u8, name: []const u8) bool {
     for (aliases[0..n]) |alias| {
         if (bodyReturnsBinding(body, alias)) return true;
         if (bodyAssignsBindingToOutParam(body, alias)) return true;
+    }
+    return false;
+}
+
+fn bodyReleasesBindingTree(body: []const u8, name: []const u8) bool {
+    if (bodyReleasesBinding(body, name)) return true;
+    var aliases: [8][]const u8 = undefined;
+    const n = collectOneHopAliases(body, name, &aliases);
+    for (aliases[0..n]) |alias| {
+        if (bodyReleasesBinding(body, alias)) return true;
+    }
+    return false;
+}
+
+fn bodyReleasesBinding(body: []const u8, name: []const u8) bool {
+    // `.free(name)` / `.destroy(name)` — including under `defer` / `errdefer`.
+    const call_needles = [_][]const u8{ ".free(", ".destroy(" };
+    for (call_needles) |needle| {
+        var i: usize = 0;
+        while (i < body.len) : (i += 1) {
+            if (!std.mem.startsWith(u8, body[i..], needle)) continue;
+            var j = i + needle.len;
+            while (j < body.len and std.ascii.isWhitespace(body[j])) : (j += 1) {}
+            if (!std.mem.startsWith(u8, body[j..], name)) continue;
+            const end = j + name.len;
+            if (end < body.len) {
+                const next = body[end];
+                if (std.ascii.isAlphanumeric(next) or next == '_') continue;
+            }
+            return true;
+        }
+    }
+    // `name.deinit(` for `create`-style objects.
+    var i: usize = 0;
+    while (i < body.len) : (i += 1) {
+        if (!std.mem.startsWith(u8, body[i..], name)) continue;
+        if (i > 0) {
+            const prev = body[i - 1];
+            if (std.ascii.isAlphanumeric(prev) or prev == '_') continue;
+        }
+        var j = i + name.len;
+        while (j < body.len and std.ascii.isWhitespace(body[j])) : (j += 1) {}
+        if (!std.mem.startsWith(u8, body[j..], ".deinit(")) continue;
+        return true;
     }
     return false;
 }
@@ -272,6 +317,19 @@ test "leaky local alloc is flagged; defer free and return-transfer are not" {
         \\    out.* = try allocator.alloc(u8, n);
         \\}
     ;
+    const explicit_free_src =
+        \\pub fn freeNow(allocator: anytype, n: usize) !void {
+        \\    const buffer = try allocator.alloc(u8, n);
+        \\    allocator.free(buffer);
+        \\}
+    ;
+    const alias_free_src =
+        \\pub fn freeAlias(allocator: anytype, n: usize) !void {
+        \\    const buffer = try allocator.alloc(u8, n);
+        \\    const owned = buffer;
+        \\    allocator.free(owned);
+        \\}
+    ;
 
     var fail_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
     defer fail_diags.deinit(gpa);
@@ -307,6 +365,16 @@ test "leaky local alloc is flagged; defer free and return-transfer are not" {
     defer out_direct_diags.deinit(gpa);
     try analyzeSource("out_direct.zig", out_param_direct_src, &out_direct_diags, gpa);
     try std.testing.expect(out_direct_diags.items.len == 0);
+
+    var free_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer free_diags.deinit(gpa);
+    try analyzeSource("free.zig", explicit_free_src, &free_diags, gpa);
+    try std.testing.expect(free_diags.items.len == 0);
+
+    var alias_free_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer alias_free_diags.deinit(gpa);
+    try analyzeSource("alias_free.zig", alias_free_src, &alias_free_diags, gpa);
+    try std.testing.expect(alias_free_diags.items.len == 0);
 
     const comment_src =
         \\pub fn documented() void {

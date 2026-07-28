@@ -53,6 +53,8 @@ myzig init
 
 Ratchet: after `myzig baseline`, CI can run `myzig check --ratchet <path>` to reject **new** debt while accepting the snapshot.
 
+SARIF: `myzig check --sarif` emits forge-oriented SARIF 2.1.0 (suitable for GitHub code scanning upload).
+
 Cost witnesses: `myzig verify-cost id-passthrough` writes `.myzig/cost-witnesses/…`; only then may `myzig receipt` include `claimed.verify_cost`.
 
 ## Layout

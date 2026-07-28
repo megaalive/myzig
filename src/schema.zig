@@ -221,7 +221,9 @@ pub const seed_alloc_undischarged: Rule = .{
         "fixtures/pass/alloc_return_local.zig",
         "fixtures/pass/alloc_return_alias.zig",
         "fixtures/pass/alloc_out_param.zig",
+        "fixtures/pass/alloc_explicit_free.zig",
         "research/incidents/MYZIG-OWN-001.md",
+        "research/incidents/MYZIG-OWN-002.md",
         "research/incidents/AZIG-OWN-002.md",
     },
 };
@@ -254,6 +256,7 @@ pub const seed_file_undischarged: Rule = .{
     .references = &.{
         "fixtures/fail/file_undischarged.zig",
         "fixtures/pass/file_defer_close.zig",
+        "fixtures/pass/file_return.zig",
     },
 };
 

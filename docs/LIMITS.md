@@ -27,7 +27,7 @@ Also see `docs/BLINDSPOTS.md` (analyzer detail) and `docs/friction-playbook.md`.
 | Rule | Ceiling | Typical FP / FN |
 |------|---------|-----------------|
 | `memory.alloc-undischarged` | likely | FP: coarse function-wide `defer …deinit/free`; FN: multi-hop aliases / callee frees |
-| `resource.file-undischarged` | likely | FP: any `.close(` in function discharges; FN: close in callee |
+| `resource.file-undischarged` | likely | FP: any `.close(` in function discharges; FN: close in callee / multi-hop |
 | `unsafe.ptrcast-unremarked` | convention | FN: cast split across lines without remark |
 | `compat.volatile-std` | convention | Opt-in only; adapter paths skipped |
 
@@ -36,6 +36,8 @@ Also see `docs/BLINDSPOTS.md` (analyzer detail) and `docs/friction-playbook.md`.
 - Needle hits after `//` on the same line are ignored (comment examples are not findings).
 - `const buf = try allocator.alloc(...); return buf;` counts as transfer (not `return buf.len`).
 - One-hop rename (`const owned = buf; return owned;`) and out-params (`out.* = buf` / `out.* = try …alloc`) count as transfer.
+- Explicit `.free(name)` / `.destroy(name)` / `name.deinit(` discharge that binding (and one-hop aliases), with or without `defer`.
+- Returning an opened file handle counts as transfer for `resource.file-undischarged`.
 
 ## Dogfood snapshot
 

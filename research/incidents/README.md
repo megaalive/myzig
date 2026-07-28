@@ -14,6 +14,7 @@ Rules (and compat/contract improvements) are born from incidents.
 | ID | Role |
 |----|------|
 | `MYZIG-OWN-001` | Fixture alloc undischarged loop |
+| `MYZIG-OWN-002` | Explicit free without defer |
 | `AZIG-OWN-001` | Arena + coarse defer discharge limits |
 | `AZIG-OWN-002` | Out-param / one-hop rename transfers |
 | `ZRIG-DOGFOOD-001` | Clean prefer-compat ratchet baseline |

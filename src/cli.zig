@@ -1,7 +1,8 @@
-//! CLI dispatch stubs. Behavior grows with M0/M1; commands are reserved now.
+//! CLI dispatch. Behavior grows with M0/M1; reserved commands stay honest stubs.
 
 const std = @import("std");
-const schema = @import("schema.zig");
+const catalog = @import("catalog.zig");
+const compat = @import("compat.zig");
 
 pub const Command = enum {
     help,
@@ -33,6 +34,14 @@ pub const Command = enum {
     }
 };
 
+pub const RunIo = struct {
+    allocator: std.mem.Allocator,
+    io: compat.Io,
+    stdout: *std.Io.Writer,
+    stderr: *std.Io.Writer,
+    version: []const u8,
+};
+
 pub fn writeHelp(writer: *std.Io.Writer) std.Io.Writer.Error!void {
     try writer.writeAll(
         \\myzig — ownership reasoning and evidence protocol for Zig
@@ -41,15 +50,15 @@ pub fn writeHelp(writer: *std.Io.Writer) std.Io.Writer.Error!void {
         \\  myzig <command> [args]
         \\
         \\Commands:
-        \\  check [path]              Run ownership checks (stub)
-        \\  explain <file:line>       Ownership narrative for a finding (stub)
-        \\  adopt [path]              Suggest editable migration policy (stub)
-        \\  baseline                  Snapshot current safety debt (stub)
+        \\  check [path]              Run ownership checks (stub → M1)
+        \\  explain <file:line>       Ownership narrative (stub → M1/M5)
+        \\  adopt [path]              Suggest editable migration policy (stub → M3)
+        \\  baseline                  Snapshot current safety debt (stub → M3)
         \\  rules [--json|--markdown|--agent|--sarif]
         \\                            List rule catalog
-        \\  receipt [path]            Emit or verify a receipt (stub)
-        \\  verify-cost <case>        Leveled ReleaseFast cost witness (stub)
-        \\  init                      Create .myzig/ project config (stub)
+        \\  receipt [path]            Emit or verify a receipt (stub → M4)
+        \\  verify-cost <case>        Leveled ReleaseFast cost witness (stub → M6)
+        \\  init                      Create .myzig/ project config
         \\  help                      Show this help
         \\  version                   Show version
         \\
@@ -60,19 +69,7 @@ pub fn writeHelp(writer: *std.Io.Writer) std.Io.Writer.Error!void {
 
 pub fn writeVersion(writer: *std.Io.Writer, version: []const u8) std.Io.Writer.Error!void {
     try writer.print("myzig {s}\n", .{version});
-}
-
-pub fn writeRulesText(writer: *std.Io.Writer) std.Io.Writer.Error!void {
-    for (schema.seed_rules) |rule| {
-        try writer.print("{s}\n", .{rule.id});
-        try writer.print("  category:   {s}\n", .{rule.category.asText()});
-        try writer.print("  severity:   {s}\n", .{rule.default_severity.asText()});
-        try writer.print("  ceiling:    {s}\n", .{rule.certainty_ceiling.asText()});
-        try writer.print("  obligation: {s}\n", .{rule.obligation.asText()});
-        try writer.print("  detector:   {s}\n", .{rule.detector.asText()});
-        try writer.print("  message:    {s}\n", .{rule.message});
-        try writer.writeAll("\n");
-    }
+    try writer.print("compat {s}\n", .{compat.adapterName()});
 }
 
 pub fn stubMessage(command: Command) []const u8 {
@@ -83,9 +80,48 @@ pub fn stubMessage(command: Command) []const u8 {
         .baseline => "baseline: snapshot/ratchet not implemented yet (M3).",
         .receipt => "receipt: reproducible receipts not implemented yet (M4).",
         .verify_cost => "verify-cost: leveled witnesses not implemented yet (M6).",
-        .init => "init: will create .myzig/ when project config lands.",
-        .help, .version, .rules, .unknown => "",
+        .help, .version, .rules, .init, .unknown => "",
     };
+}
+
+pub fn dispatch(rio: RunIo, argv: []const []const u8) !void {
+    const command: Command = if (argv.len == 0) .help else Command.parse(argv[0]);
+    const rest = if (argv.len == 0) argv else argv[1..];
+
+    switch (command) {
+        .help => try writeHelp(rio.stdout),
+        .version => try writeVersion(rio.stdout, rio.version),
+        .rules => {
+            var format: catalog.Format = .text;
+            for (rest) |a| {
+                format = catalog.Format.parse(a) orelse {
+                    try rio.stderr.print("myzig rules: unknown flag '{s}'\n", .{a});
+                    return error.Usage;
+                };
+            }
+            try catalog.write(rio.stdout, format);
+        },
+        .init => {
+            try compat.createDirPath(rio.io, ".myzig");
+            const readme =
+                \\# myzig project config
+                \\
+                \\Policy, baselines, and local overrides will live here.
+                \\Ordinary Zig remains first-class; this directory is optional evidence/config.
+                \\
+            ;
+            try compat.writeFile(rio.io, ".myzig/README.md", readme);
+            try rio.stdout.writeAll("created .myzig/\n");
+        },
+        .unknown => {
+            try rio.stderr.print("myzig: unknown command '{s}'\n\n", .{argv[0]});
+            try writeHelp(rio.stderr);
+            return error.UnknownCommand;
+        },
+        else => {
+            try rio.stdout.print("{s}\n", .{stubMessage(command)});
+        },
+    }
 }
 
 test "parse known commands" {

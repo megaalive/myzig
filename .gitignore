@@ -5,6 +5,9 @@
 zig-cache/
 zig-out/
 
+# Local project config created by `myzig init`
+.myzig/
+
 # Local editor / OS noise
 .vs/
 .vscode/

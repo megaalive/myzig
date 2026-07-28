@@ -7,6 +7,8 @@
 const std = @import("std");
 
 pub const schema = @import("schema.zig");
+pub const diagnostic = @import("diagnostic.zig");
+pub const catalog = @import("catalog.zig");
 pub const cli = @import("cli.zig");
 pub const compat = @import("compat.zig");
 
@@ -19,12 +21,16 @@ pub const DetectorKind = schema.DetectorKind;
 pub const RepairTier = schema.RepairTier;
 pub const Repair = schema.Repair;
 pub const Rule = schema.Rule;
+pub const Diagnostic = diagnostic.Diagnostic;
+pub const Location = diagnostic.Location;
 
 /// Package identity shown by `myzig --version` and receipts.
 pub const version: []const u8 = "0.0.0";
 
 test {
     _ = schema;
+    _ = diagnostic;
+    _ = catalog;
     _ = cli;
     _ = compat;
 }

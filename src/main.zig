@@ -7,7 +7,7 @@ pub fn main(init: std.process.Init) !void {
     const args = try init.minimal.args.toSlice(arena);
     const io = init.io;
 
-    var stdout_buffer: [4096]u8 = undefined;
+    var stdout_buffer: [8192]u8 = undefined;
     var stdout_file_writer: Io.File.Writer = .init(.stdout(), io, &stdout_buffer);
     const stdout = &stdout_file_writer.interface;
 
@@ -15,34 +15,27 @@ pub fn main(init: std.process.Init) !void {
     var stderr_file_writer: Io.File.Writer = .init(.stderr(), io, &stderr_buffer);
     const stderr = &stderr_file_writer.interface;
 
-    // args[0] is the executable path when present.
     const argv = if (args.len > 0) args[1..] else args[0..0];
-    const command: myzig.cli.Command = if (argv.len == 0) .help else myzig.cli.Command.parse(argv[0]);
+    const rio = myzig.cli.RunIo{
+        .allocator = arena,
+        .io = io,
+        .stdout = stdout,
+        .stderr = stderr,
+        .version = myzig.version,
+    };
 
-    switch (command) {
-        .help => {
-            try myzig.cli.writeHelp(stdout);
-            try stdout.flush();
-        },
-        .version => {
-            try myzig.cli.writeVersion(stdout, myzig.version);
-            try stdout.flush();
-        },
-        .rules => {
-            try myzig.cli.writeRulesText(stdout);
-            try stdout.flush();
-        },
-        .unknown => {
-            try stderr.print("myzig: unknown command '{s}'\n\n", .{argv[0]});
-            try myzig.cli.writeHelp(stderr);
-            try stderr.flush();
-            return error.UnknownCommand;
-        },
-        else => {
-            try stdout.print("{s}\n", .{myzig.cli.stubMessage(command)});
-            try stdout.flush();
-        },
-    }
+    myzig.cli.dispatch(rio, argv) catch |err| {
+        switch (err) {
+            error.Usage => try stderr.writeAll("myzig: bad usage (try `myzig help`)\n"),
+            error.UnknownCommand => {},
+            else => try stderr.print("myzig: {s}\n", .{@errorName(err)}),
+        }
+        try stderr.flush();
+        return err;
+    };
+
+    try stdout.flush();
+    try stderr.flush();
 }
 
 test "cli module loads" {

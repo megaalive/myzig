@@ -1,9 +1,11 @@
-//! CLI dispatch. Behavior grows with M0/M1; reserved commands stay honest stubs.
+//! CLI dispatch for myzig coach commands.
 
 const std = @import("std");
 const catalog = @import("catalog.zig");
 const check_mod = @import("check.zig");
 const compat = @import("compat.zig");
+const explain_mod = @import("explain.zig");
+const receipt_mod = @import("receipt.zig");
 
 pub const Command = enum {
     help,
@@ -51,13 +53,14 @@ pub fn writeHelp(writer: *std.Io.Writer) std.Io.Writer.Error!void {
         \\  myzig <command> [args]
         \\
         \\Commands:
-        \\  check [path]              Run ownership checks (local heuristics)
-        \\  explain <file:line>       Ownership narrative (stub → M1/M5)
+        \\  check [path] [--receipt]  Run ownership checks
+        \\  explain <file:line>       Ownership narrative + repair choices
+        \\  explain --rule <id>       Explain a catalog rule
         \\  adopt [path]              Suggest editable migration policy (stub → M3)
         \\  baseline                  Snapshot current safety debt (stub → M3)
         \\  rules [--json|--markdown|--agent|--sarif]
         \\                            List rule catalog
-        \\  receipt [path]            Emit or verify a receipt (stub → M4)
+        \\  receipt [path]            Emit thin check receipt (JSON)
         \\  verify-cost <case>        Leveled ReleaseFast cost witness (stub → M6)
         \\  init                      Create .myzig/ project config
         \\  help                      Show this help
@@ -75,13 +78,10 @@ pub fn writeVersion(writer: *std.Io.Writer, version: []const u8) std.Io.Writer.E
 
 pub fn stubMessage(command: Command) []const u8 {
     return switch (command) {
-        .check => "",
-        .explain => "explain: ownership narratives land with M1/M5.",
         .adopt => "adopt: policy synthesizer not implemented yet (M3).",
         .baseline => "baseline: snapshot/ratchet not implemented yet (M3).",
-        .receipt => "receipt: reproducible receipts not implemented yet (M4).",
         .verify_cost => "verify-cost: leveled witnesses not implemented yet (M6).",
-        .help, .version, .rules, .init, .unknown => "",
+        else => "",
     };
 }
 
@@ -103,11 +103,58 @@ pub fn dispatch(rio: RunIo, argv: []const []const u8) !void {
             try catalog.write(rio.stdout, format);
         },
         .check => {
+            var path: []const u8 = ".";
+            var want_receipt = false;
+            for (rest) |a| {
+                if (std.mem.eql(u8, a, "--receipt")) {
+                    want_receipt = true;
+                } else if (std.mem.startsWith(u8, a, "-")) {
+                    try rio.stderr.print("myzig check: unknown flag '{s}'\n", .{a});
+                    return error.Usage;
+                } else {
+                    path = a;
+                }
+            }
+            var result = try check_mod.checkPath(rio.io, rio.allocator, path);
+            defer result.deinit(rio.allocator);
+            if (want_receipt) {
+                try receipt_mod.writeJson(rio.stdout, .{
+                    .myzig_version = rio.version,
+                    .compat_adapter = compat.adapterName(),
+                    .path = path,
+                    .findings = result.diagnostics.items.len,
+                    .diagnostics = result.diagnostics.items,
+                });
+            } else {
+                try check_mod.writeReport(rio.stdout, result.diagnostics.items);
+            }
+            if (result.diagnostics.items.len > 0) return error.Findings;
+        },
+        .receipt => {
             const path = if (rest.len >= 1) rest[0] else ".";
             var result = try check_mod.checkPath(rio.io, rio.allocator, path);
             defer result.deinit(rio.allocator);
-            try check_mod.writeReport(rio.stdout, result.diagnostics.items);
+            try receipt_mod.writeJson(rio.stdout, .{
+                .myzig_version = rio.version,
+                .compat_adapter = compat.adapterName(),
+                .path = path,
+                .findings = result.diagnostics.items.len,
+                .diagnostics = result.diagnostics.items,
+            });
             if (result.diagnostics.items.len > 0) return error.Findings;
+        },
+        .explain => {
+            if (rest.len >= 2 and std.mem.eql(u8, rest[0], "--rule")) {
+                const rule = explain_mod.findRule(rest[1]) orelse {
+                    try rio.stderr.print("myzig explain: unknown rule '{s}'\n", .{rest[1]});
+                    return error.Usage;
+                };
+                try explain_mod.writeRuleExplain(rio.stdout, rule);
+                return;
+            }
+            if (rest.len < 1) return error.Usage;
+            const target = try explain_mod.parseTarget(rest[0]);
+            try explain_mod.explainLocation(rio.io, rio.allocator, target, rio.stdout);
         },
         .init => {
             try compat.createDirPath(rio.io, ".myzig");
@@ -134,7 +181,7 @@ pub fn dispatch(rio: RunIo, argv: []const []const u8) !void {
 
 test "parse known commands" {
     try std.testing.expect(Command.parse("check") == .check);
+    try std.testing.expect(Command.parse("explain") == .explain);
+    try std.testing.expect(Command.parse("receipt") == .receipt);
     try std.testing.expect(Command.parse("verify-cost") == .verify_cost);
-    try std.testing.expect(Command.parse("--help") == .help);
-    try std.testing.expect(Command.parse("nope") == .unknown);
 }

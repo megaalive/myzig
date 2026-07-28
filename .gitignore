@@ -15,3 +15,7 @@ zig-out/
 *.suo
 Thumbs.db
 Desktop.ini
+
+receipt.json
+receipt-out.json
+

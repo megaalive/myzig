@@ -95,7 +95,8 @@ fn nextInitAssign(body: []const u8, from: usize) ?InitHit {
 }
 
 fn bodyHasDeinit(body: []const u8, name: []const u8) bool {
-    // `name.deinit` or `defer name.deinit` / `errdefer name.deinit`
+    // `name.deinit` / `name.destroy` (and under defer / errdefer).
+    const suffixes = [_][]const u8{ ".deinit", ".destroy" };
     var i: usize = 0;
     while (i < body.len) : (i += 1) {
         if (!std.mem.startsWith(u8, body[i..], name)) continue;
@@ -105,7 +106,9 @@ fn bodyHasDeinit(body: []const u8, name: []const u8) bool {
         }
         var j = i + name.len;
         while (j < body.len and std.ascii.isWhitespace(body[j])) : (j += 1) {}
-        if (std.mem.startsWith(u8, body[j..], ".deinit")) return true;
+        for (suffixes) |suf| {
+            if (std.mem.startsWith(u8, body[j..], suf)) return true;
+        }
     }
     return false;
 }
@@ -215,4 +218,15 @@ test "init without deinit flagged; defer deinit and return transfer are not" {
     defer struct_transfer_diags.deinit(gpa);
     try analyzeSource("struct_transfer.zig", struct_transfer_src, &struct_transfer_diags, gpa);
     try std.testing.expect(struct_transfer_diags.items.len == 0);
+
+    const destroy_src =
+        \\pub fn ok() !void {
+        \\    var decoration = try Decoration.init(.{});
+        \\    defer decoration.destroy();
+        \\}
+    ;
+    var destroy_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer destroy_diags.deinit(gpa);
+    try analyzeSource("destroy.zig", destroy_src, &destroy_diags, gpa);
+    try std.testing.expect(destroy_diags.items.len == 0);
 }

@@ -11,7 +11,7 @@ myzig's early detectors are **local heuristics**, not whole-program proof.
 | Path sensitivity | Conditional free/close may be treated as function-wide discharge |
 | Transfers | Return / out-param / indexed-out / rename / retarget / field-store / `return .{ fields }` / append / arena-backed; wrapper / callee frees still weak |
 | Aliasing | Exact RHS rename closure (bounded) is followed for transfer/free; wrapper APIs stay invisible |
-| Local free | `.free(name)` / `.destroy(name)` / `name.deinit(` discharge that binding; coarse function-wide `defer …deinit/free` remains for arena-style sites |
+| Local free | `.free(name)` / `.destroy(name)` / `.release(name)` / `name.deinit(`/`.destroy(`/`.release(` discharge that binding; coarse function-wide `defer …deinit/free/release` remains for arena-style sites |
 | Permits | `@ptrCast`/`@alignCast` accept permit/safety on adjacent lines (prev/curr/next) |
 | Cross-function | Callee frees / ownership handoff across functions are out of scope |
 | Arenas | Arena-scoped lifetimes are not modeled beyond coarse `defer …deinit` discharge (see `AZIG-OWN-001`) |
@@ -28,7 +28,7 @@ myzig's early detectors are **local heuristics**, not whole-program proof.
 | Suppressions | Line-scoped `myzig-disable-*` only (not multi-line enable/disable regions) |
 | General lint | Naming, unused, braces, build-step AST hosts — out of product scope (`EXT-STUDY-006`) |
 | `.create(` | Single-arg only (`allocator.create(T)`); multi-arg methods skipped (`EXT-STUDY-009`) |
-| Arena acquires | Token heuristic (`arena` / `arena_allocator`); does not prove arena deinit |
+| Arena acquires | Token heuristic (`arena` / `arena_allocator` / `scratch_allocator` / `scratch.`); does not prove arena/scratch reset |
 | FFI / C boundaries | Zig allocator tracking does not prove external cleanup (`EXT-STUDY-013`) |
 | Async completions | Outstanding submissions after deinit not modeled (`EXT-STUDY-014`) |
 | Phase allocators | Optional helper only; sealed-phase misuse is assert-time, not a check rule |
@@ -37,6 +37,9 @@ myzig's early detectors are **local heuristics**, not whole-program proof.
 | Pooled resources | `deinit` may release pool handles — not modeled beyond playbook (`EXT-STUDY-017`) |
 | FFI wrappers | C `close`/`finalize` inside Zig `deinit` is convention, not a seed rule yet (`EXT-STUDY-018`) |
 | Region heaps | Linker/fixed-buffer allocators are playbook/helper territory (`EXT-STUDY-019`) |
+| Nested owners | Parent/child finalizer pools are playbook only (`EXT-STUDY-021`) |
+| Handle release | `release` discharges tracked bindings; multi-arg GPU create still skipped (`EXT-STUDY-022`) |
+| Protocol destroy | `name.destroy` matches init convention; listeners not modeled (`EXT-STUDY-023`) |
 
 ## Product stance
 

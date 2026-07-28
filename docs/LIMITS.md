@@ -41,7 +41,7 @@ Also see `docs/BLINDSPOTS.md` (analyzer detail) and `docs/friction-playbook.md`.
 - Needle hits after `//` on the same line are ignored (comment examples are not findings).
 - `const buf = try allocator.alloc(...); return buf;` counts as transfer (not `return buf.len`).
 - One-hop rename (`const owned = buf; return owned;`) and out-params (`out.* = buf` / `out.* = try …alloc`) count as transfer.
-- Explicit `.free(name)` / `.destroy(name)` / `name.deinit(` discharge that binding (and rename aliases), with or without `defer`.
+- Explicit `.free(name)` / `.destroy(name)` / `.release(name)` / `name.deinit(` / `name.destroy(` / `name.release(` discharge that binding (and rename aliases), with or without `defer`.
 - Returning an opened file handle counts as transfer for `resource.file-undischarged`.
 - Acquires also include `.allocPrint(` / `.allocPrintZ(` / `.alignedAlloc(` / `.dupeZ(` / `.dupeSentinel(` / `.realloc(` / `mem.concat(` / `mem.join(` (see `AZIG-OWN-003`).
 - Rename chains (`a → b → c`) are followed for transfer/free (bounded closure).
@@ -51,13 +51,13 @@ Also see `docs/BLINDSPOTS.md` (analyzer detail) and `docs/friction-playbook.md`.
 - Exact assignment retarget `out = next` joins the alias closure (`AZIG-OWN-007`).
 - Field assignment `self.x = try …alloc/dupe/create` counts as store transfer (`EXT-STUDY-007`).
 - Indexed store `into[i] = try …dupe/alloc` counts as transfer into a caller buffer (`EXT-STUDY-020`).
-- Arena-token acquires (`analyser.arena`, `arena_allocator`, …) count as transferred (`EXT-STUDY-008`).
+- Arena-token acquires (`analyser.arena`, `arena_allocator`, `scratch_allocator`, …) count as transferred (`EXT-STUDY-008`, `EXT-STUDY-024`).
 - `.create(` is an acquire only for single-argument calls (`allocator.create(T)`) (`EXT-STUDY-009`).
 - Empty `defer {}` / `errdefer {}` (whitespace/comment-only) are convention notes (`EXT-STUDY-001`).
 - Hidden `page_allocator` / `c_allocator` use on alloc/free lines is a convention note (`EXT-STUDY-004`).
 - Empty `catch {}` / `catch unreachable` are convention notes; comment-only catch and documented unreachable are allowed (`EXT-STUDY-005`, `EXT-STUDY-009`).
 - Inline suppressions: `// myzig-disable-next-line` / `myzig-disable-current-line` [`rule_id…`] (`EXT-STUDY-005`).
-- `.init(` bindings without `.deinit` / return transfer are convention notes (`EXT-STUDY-012`); `return .{ .f = name }` transfers (`EXT-STUDY-020`).
+- `.init(` bindings without `.deinit` / `.destroy` / return transfer are convention notes (`EXT-STUDY-012`, `EXT-STUDY-023`); `return .{ .f = name }` transfers (`EXT-STUDY-020`).
 - Optional `myzig.compat.PhaseAllocator` seals alloc capability after startup (`EXT-STUDY-010`).
 
 ## Dogfood snapshot

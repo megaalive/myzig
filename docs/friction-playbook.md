@@ -244,3 +244,31 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **don't:** Add local defer free on values stored into caller/`return .{…}`
 - **promote-to-code-when:** already promoted → indexed-out + init struct return
 - **incident:** EXT-STUDY-020
+
+### F-OWN-023 · Nested owners outlive children
+- **symptom:** tearing down a parent pool/env while child sessions still hold weak callbacks
+- **do:** Keep identity/finalizer pools on the longest-lived owner; destroy children first
+- **don't:** Assume child `deinit` frees parent-owned registration tables
+- **promote-to-code-when:** playbook until cross-object CFG exists
+- **incident:** EXT-STUDY-021
+
+### F-OWN-024 · release vs destroy are different discharges
+- **symptom:** calling `allocator.destroy` on a GPU/API handle, or skipping `view.release()`
+- **do:** Match the API: `.release()` / object `.destroy()` for handles; `gpa.destroy` for Zig heap
+- **don't:** Treat GPA leak checks as proof of external handle cleanup
+- **promote-to-code-when:** `release` already discharges tracked acquires; multi-arg create still skipped
+- **incident:** EXT-STUDY-022
+
+### F-OWN-025 · Protocol teardown often uses destroy
+- **symptom:** `try X.init` flagged when teardown is `name.destroy`, or listener frees the Zig wrapper
+- **do:** Pair init with `defer name.destroy` when that is the API; free wrapper after protocol destroy
+- **don't:** Invent a no-op `deinit` just to silence the convention note
+- **promote-to-code-when:** already promoted → `destroy` matches init-without-deinit
+- **incident:** EXT-STUDY-023
+
+### F-OWN-026 · Scratch allocators are arena-shaped
+- **symptom:** `defer free` on a `scratch_allocator` / short-lived frame buffer string
+- **do:** Allocate from scratch; let reset/parent lifetime reclaim; set lasting allocators explicitly
+- **don't:** Fall back to hidden `page_allocator`/`c_allocator` for the lasting heap without documenting it
+- **promote-to-code-when:** scratch tokens already arena-discharged; hidden-allocator covers bare page/c
+- **incident:** EXT-STUDY-024

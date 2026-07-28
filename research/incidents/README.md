@@ -44,6 +44,10 @@ Rules (and compat/contract improvements) are born from incidents.
 | `EXT-STUDY-018` | FFI wrapper deinit closes C handle |
 | `EXT-STUDY-019` | Fixed-region / linker-heap allocators |
 | `EXT-STUDY-020` | Indexed out-store + init returned in struct |
+| `EXT-STUDY-021` | Nested owner scopes outlive children |
+| `EXT-STUDY-022` | Handle `release` vs allocator `destroy` |
+| `EXT-STUDY-023` | Protocol `destroy` + listener teardown |
+| `EXT-STUDY-024` | Lasting vs scratch allocator naming |
 | `ZRIG-DOGFOOD-001` | Clean prefer-compat ratchet baseline |
 | `AGENT-STD-001` / `002` | std churn → compat + volatile rule |
 | `AGENT-CLI-001` / `002` | Clean exits; exhaustive CLI / witness hash |

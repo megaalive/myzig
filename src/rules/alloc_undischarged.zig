@@ -18,7 +18,7 @@ const acquire_needles = [_][]const u8{
     ".create(",
     ".dupe(",
 };
-const discharge_words = [_][]const u8{ "free", "destroy", "deinit" };
+const discharge_words = [_][]const u8{ "free", "destroy", "deinit", "release" };
 
 pub fn analyzeSource(
     path: []const u8,
@@ -156,6 +156,9 @@ fn isArenaBackedAcquireLine(line: []const u8) bool {
         "arena,",
         "arena)",
         "arena_allocator",
+        "scratch_allocator",
+        "scratch.",
+        ".scratch.",
     };
     var has_arena = false;
     for (markers) |m| {
@@ -342,8 +345,8 @@ fn bodyReleasesBindingTree(body: []const u8, name: []const u8) bool {
 }
 
 fn bodyReleasesBinding(body: []const u8, name: []const u8) bool {
-    // `.free(name)` / `.destroy(name)` — including under `defer` / `errdefer`.
-    const call_needles = [_][]const u8{ ".free(", ".destroy(" };
+    // `.free(name)` / `.destroy(name)` / `.release(name)` — including under `defer` / `errdefer`.
+    const call_needles = [_][]const u8{ ".free(", ".destroy(", ".release(" };
     for (call_needles) |needle| {
         var i: usize = 0;
         while (i < body.len) : (i += 1) {
@@ -359,7 +362,8 @@ fn bodyReleasesBinding(body: []const u8, name: []const u8) bool {
             return true;
         }
     }
-    // `name.deinit(` for `create`-style objects.
+    // `name.deinit(` / `name.destroy(` / `name.release(` for create-style objects.
+    const method_needles = [_][]const u8{ ".deinit(", ".destroy(", ".release(" };
     var i: usize = 0;
     while (i < body.len) : (i += 1) {
         if (!std.mem.startsWith(u8, body[i..], name)) continue;
@@ -369,8 +373,9 @@ fn bodyReleasesBinding(body: []const u8, name: []const u8) bool {
         }
         var j = i + name.len;
         while (j < body.len and std.ascii.isWhitespace(body[j])) : (j += 1) {}
-        if (!std.mem.startsWith(u8, body[j..], ".deinit(")) continue;
-        return true;
+        for (method_needles) |m| {
+            if (std.mem.startsWith(u8, body[j..], m)) return true;
+        }
     }
     return false;
 }
@@ -839,4 +844,26 @@ test "leaky local alloc is flagged; defer free and return-transfer are not" {
     defer indexed_diags.deinit(gpa);
     try analyzeSource("indexed.zig", indexed_out_src, &indexed_diags, gpa);
     try std.testing.expect(indexed_diags.items.len == 0);
+
+    const release_src =
+        \\pub fn ok(allocator: anytype) !void {
+        \\    const view = try allocator.create(u32);
+        \\    defer view.release();
+        \\}
+    ;
+    var release_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer release_diags.deinit(gpa);
+    try analyzeSource("release.zig", release_src, &release_diags, gpa);
+    try std.testing.expect(release_diags.items.len == 0);
+
+    const scratch_src =
+        \\pub fn frame(ctx: anytype) !void {
+        \\    const msg = try ctx.scratch_allocator.dupe(u8, "ok");
+        \\    _ = msg;
+        \\}
+    ;
+    var scratch_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer scratch_diags.deinit(gpa);
+    try analyzeSource("scratch.zig", scratch_src, &scratch_diags, gpa);
+    try std.testing.expect(scratch_diags.items.len == 0);
 }

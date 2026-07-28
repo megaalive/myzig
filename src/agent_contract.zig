@@ -50,7 +50,7 @@ pub fn writeContract(writer: *std.Io.Writer, version: []const u8) std.Io.Writer.
         \\- FFI wrappers: `ffi.wrapper-init-without-deinit` on `c.` files (`F-OWN-066`)
         \\- Sentinel types: keep `[:0]u8` from `dupeZ` / `allocSentinel` (`F-OWN-067`)
         \\- Dir checks: diagnostic paths must be owned for the result lifetime (`F-CLI-008`)
-        \\- Dogfood apps (zrig): clean denial exits (`F-CLI-007`); prove HTTP on loopback first (`F-HARNESS-003`); plans+receipts+artifacts (`F-HARNESS-004`); respect stop/continue flags (`F-HARNESS-005`); MCP stdio is tools-only (`F-HARNESS-006`); prefer named MCP fields (`F-HARNESS-007`); Cursor Windows needs `zrig.exe` (`F-HARNESS-008`); MCP `isError` stays in-band (`F-HARNESS-009`); zrig growth is unbounded (V4+ open; azig retired lab)
+        \\- Dogfood apps (zrig): clean denial exits (`F-CLI-007`); prove HTTP on loopback first (`F-HARNESS-003`); plans+receipts+artifacts (`F-HARNESS-004`); respect stop/continue flags (`F-HARNESS-005`); MCP stdio is tools-only (`F-HARNESS-006`); prefer named MCP fields (`F-HARNESS-007`); Cursor Windows needs `zrig.exe` (`F-HARNESS-008`); MCP `isError` stays in-band (`F-HARNESS-009`); V4 ask uses mock in CI (`F-HARNESS-011`); zrig growth unbounded (azig retired lab)
         \\
     );
 }

@@ -666,6 +666,13 @@ elease already helps
 - **promote-to-code-when:** stay text; product slices land in zrig
 - **incident:** none yet
 
+### F-HARNESS-011 · V4 ask uses mock in CI; openai_compat needs net.connect
+- **symptom:** CI hangs on missing API keys, or agents call openai_compat without caps
+- **do:** `zrig ask --provider mock` (+ `--receipt`) locally/CI; live path: `--provider openai_compat --allow net.connect` + `OPENAI_API_KEY` / `--api-key-env`. See zrig `docs/ask.md`
+- **don't:** Require outbound model HTTPS for green CI; don't bypass capability policy for tools invoked mid-turn
+- **promote-to-code-when:** already promoted → `zrig ask` + mock CI smoke
+- **incident:** ZRIG-DOGFOOD-012
+
 ### F-OWN-068 · Comment-only `catch` must not hide `};`
 - **symptom:** `expected ';' after statement` after documenting empty `catch {}` for swallow-error
 - **do:** Multi-line `catch {\n    // intentional …\n};` so the closing brace is not line-commented

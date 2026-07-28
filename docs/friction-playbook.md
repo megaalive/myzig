@@ -62,3 +62,10 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **don't:** Silent “make it compile” ownership changes that change API contracts.
 - **promote-to-code-when:** new repeated ownership pattern → incident + rule
 - **incident:** MYZIG-OWN-001
+
+### F-CLI-002 · Adopt + ratchet for legacy debt
+- **symptom:** CI fails forever on existing findings; or agents “fix” debt by silencing rules
+- **do:** `myzig adopt` → edit `.myzig/policy.md` → `myzig baseline` → CI `myzig check --ratchet <path>` (blocks increases only)
+- **don't:** Treat ratchet ok as “no findings”; print still shows current debt
+- **promote-to-code-when:** already promoted → adopt/baseline/`--ratchet` (M3 V0)
+- **incident:** none yet

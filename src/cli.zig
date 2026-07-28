@@ -7,6 +7,8 @@ const compat = @import("compat.zig");
 const explain_mod = @import("explain.zig");
 const friction_mod = @import("friction.zig");
 const receipt_mod = @import("receipt.zig");
+const baseline_mod = @import("baseline.zig");
+const adopt_mod = @import("adopt.zig");
 
 pub const Command = enum {
     help,
@@ -56,12 +58,12 @@ pub fn writeHelp(writer: *std.Io.Writer) std.Io.Writer.Error!void {
         \\  myzig <command> [args]
         \\
         \\Commands:
-        \\  check [path] [--receipt] [--prefer-compat]
-        \\                            Run ownership checks
+        \\  check [path] [--receipt] [--prefer-compat] [--ratchet]
+        \\                            Run ownership checks (optional debt ratchet)
         \\  explain <file:line>       Ownership narrative + repair choices
         \\  explain --rule <id>       Explain a catalog rule
-        \\  adopt [path]              Suggest editable migration policy (stub → M3)
-        \\  baseline                  Snapshot current safety debt (stub → M3)
+        \\  adopt [path]              Suggest editable policy + baseline if missing
+        \\  baseline [path]           Snapshot current findings for ratchet
         \\  rules [--json|--markdown|--agent|--sarif]
         \\                            List rule catalog
         \\  receipt [path]            Emit thin check receipt (JSON)
@@ -71,7 +73,7 @@ pub fn writeHelp(writer: *std.Io.Writer) std.Io.Writer.Error!void {
         \\  help                      Show this help
         \\  version                   Show version
         \\
-        \\Exit codes: 0 ok · 1 findings/error · 2 bad usage / unknown command
+        \\Exit codes: 0 ok · 1 findings/ratchet/error · 2 bad usage / unknown command
         \\Identity: deterministic · honest · auditable
         \\
     );
@@ -84,8 +86,6 @@ pub fn writeVersion(writer: *std.Io.Writer, version: []const u8) std.Io.Writer.E
 
 pub fn stubMessage(command: Command) []const u8 {
     return switch (command) {
-        .adopt => "adopt: policy synthesizer not implemented yet (M3).",
-        .baseline => "baseline: snapshot/ratchet not implemented yet (M3).",
         .verify_cost => "verify-cost: leveled witnesses not implemented yet (M6).",
         else => "",
     };
@@ -112,11 +112,14 @@ pub fn dispatch(rio: RunIo, argv: []const []const u8) !void {
             var path: []const u8 = ".";
             var want_receipt = false;
             var prefer_compat = false;
+            var want_ratchet = false;
             for (rest) |a| {
                 if (std.mem.eql(u8, a, "--receipt")) {
                     want_receipt = true;
                 } else if (std.mem.eql(u8, a, "--prefer-compat")) {
                     prefer_compat = true;
+                } else if (std.mem.eql(u8, a, "--ratchet")) {
+                    want_ratchet = true;
                 } else if (std.mem.startsWith(u8, a, "-")) {
                     try rio.stderr.print("myzig check: unknown flag '{s}'\n", .{a});
                     return error.Usage;
@@ -140,7 +143,53 @@ pub fn dispatch(rio: RunIo, argv: []const []const u8) !void {
             } else {
                 try check_mod.writeReport(rio.stdout, result.diagnostics.items);
             }
+            if (want_ratchet) {
+                var loaded = baseline_mod.loadBundle(rio.io, rio.allocator) catch |err| {
+                    try rio.stderr.print(
+                        "myzig check --ratchet: missing or unreadable {s} ({s}); run `myzig baseline` first\n",
+                        .{ baseline_mod.baseline_path, @errorName(err) },
+                    );
+                    return error.Usage;
+                };
+                defer loaded.deinit(rio.allocator);
+                var current = try baseline_mod.fromDiagnostics(
+                    rio.allocator,
+                    path,
+                    rio.version,
+                    result.diagnostics.items,
+                );
+                defer current.deinit(rio.allocator);
+                var cmp = try baseline_mod.compare(rio.allocator, loaded.snap, current);
+                defer cmp.deinit(rio.allocator);
+                if (!cmp.ok) {
+                    try rio.stderr.writeAll("ratchet: new safety debt vs baseline\n");
+                    for (cmp.increases.items) |line| {
+                        try rio.stderr.print("  {s}\n", .{line});
+                    }
+                    return error.Findings;
+                }
+                try rio.stdout.writeAll("ratchet: ok (no increase vs baseline)\n");
+                // Existing findings are accepted debt under ratchet mode.
+                return;
+            }
             if (result.diagnostics.items.len > 0) return error.Findings;
+        },
+        .adopt => {
+            const path = if (rest.len >= 1) rest[0] else ".";
+            try adopt_mod.run(rio.io, rio.allocator, path, rio.version, rio.stdout, true);
+        },
+        .baseline => {
+            const path = if (rest.len >= 1) rest[0] else ".";
+            var result = try check_mod.checkPath(rio.io, rio.allocator, path);
+            defer result.deinit(rio.allocator);
+            var snap = try baseline_mod.fromDiagnostics(rio.allocator, path, rio.version, result.diagnostics.items);
+            defer snap.deinit(rio.allocator);
+            try baseline_mod.writeFile(rio.io, rio.allocator, snap);
+            try rio.stdout.print("wrote {s}\n", .{baseline_mod.baseline_path});
+            try rio.stdout.print("total_findings: {d}\n", .{snap.total_findings});
+            for (snap.by_rule) |rc| {
+                try rio.stdout.print("  {s}: {d}\n", .{ rc.rule_id, rc.count });
+            }
         },
         .receipt => {
             const path = if (rest.len >= 1) rest[0] else ".";

@@ -108,3 +108,17 @@ jobs:
           "$BIN" explain --rule compat.volatile-std | head -n 10
           "$BIN" friction --sources | head -n 20
           "$BIN" friction | grep -q "F-STD-001"
+          # M3 adopt / baseline / ratchet
+          rm -rf .myzig
+          "$BIN" adopt fixtures/pass > adopt.out
+          test -f .myzig/policy.md
+          test -f .myzig/baseline.json
+          grep -q "Zig files" adopt.out
+          "$BIN" check --ratchet fixtures/pass
+          # Increasing debt must fail ratchet.
+          if "$BIN" check --ratchet fixtures/fail; then
+            echo "expected ratchet failure on fixtures/fail" >&2
+            exit 1
+          fi
+          "$BIN" baseline fixtures/fail > /dev/null
+          "$BIN" check --ratchet fixtures/fail

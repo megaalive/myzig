@@ -36,16 +36,18 @@ defer gpa.free(data);
 ## CLI
 
 ```text
-myzig check [path]
+myzig check [path] [--ratchet]
 myzig explain <file:line>
+myzig adopt [path]           # editable .myzig/policy.md + baseline if missing
+myzig baseline [path]        # snapshot findings for ratchet
 myzig friction [--sources]   # living text tips; update without new Zig code
-myzig adopt [path]
-myzig baseline
 myzig rules [--json|--markdown|--agent|--sarif]
 myzig receipt [path]
 myzig verify-cost <case>
 myzig init
 ```
+
+Ratchet: after `myzig baseline`, CI can run `myzig check --ratchet <path>` to reject **new** debt while accepting the snapshot.
 
 ## Layout
 

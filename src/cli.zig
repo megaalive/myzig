@@ -2,6 +2,7 @@
 
 const std = @import("std");
 const catalog = @import("catalog.zig");
+const check_mod = @import("check.zig");
 const compat = @import("compat.zig");
 
 pub const Command = enum {
@@ -50,7 +51,7 @@ pub fn writeHelp(writer: *std.Io.Writer) std.Io.Writer.Error!void {
         \\  myzig <command> [args]
         \\
         \\Commands:
-        \\  check [path]              Run ownership checks (stub → M1)
+        \\  check [path]              Run ownership checks (local heuristics)
         \\  explain <file:line>       Ownership narrative (stub → M1/M5)
         \\  adopt [path]              Suggest editable migration policy (stub → M3)
         \\  baseline                  Snapshot current safety debt (stub → M3)
@@ -74,7 +75,7 @@ pub fn writeVersion(writer: *std.Io.Writer, version: []const u8) std.Io.Writer.E
 
 pub fn stubMessage(command: Command) []const u8 {
     return switch (command) {
-        .check => "check: analyzer not implemented yet (M1).",
+        .check => "",
         .explain => "explain: ownership narratives land with M1/M5.",
         .adopt => "adopt: policy synthesizer not implemented yet (M3).",
         .baseline => "baseline: snapshot/ratchet not implemented yet (M3).",
@@ -100,6 +101,13 @@ pub fn dispatch(rio: RunIo, argv: []const []const u8) !void {
                 };
             }
             try catalog.write(rio.stdout, format);
+        },
+        .check => {
+            const path = if (rest.len >= 1) rest[0] else ".";
+            var result = try check_mod.checkPath(rio.io, rio.allocator, path);
+            defer result.deinit(rio.allocator);
+            try check_mod.writeReport(rio.stdout, result.diagnostics.items);
+            if (result.diagnostics.items.len > 0) return error.Findings;
         },
         .init => {
             try compat.createDirPath(rio.io, ".myzig");

@@ -46,7 +46,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          zig build run -- version
-          zig build run -- rules --json | head -n 5
-          zig build run -- init
+          BIN="zig-out/bin/myzig"
+          if [[ ! -x "$BIN" && -x "${BIN}.exe" ]]; then BIN="${BIN}.exe"; fi
+          "$BIN" version
+          "$BIN" rules --json | head -n 5
+          "$BIN" init
           test -f .myzig/README.md
+          # Fail fixture must report findings (non-zero).
+          if "$BIN" check fixtures/fail/alloc_undischarged.zig; then
+            echo "expected findings on fail fixture" >&2
+            exit 1
+          fi
+          # Pass fixture must be clean.
+          "$BIN" check fixtures/pass/alloc_defer_free.zig

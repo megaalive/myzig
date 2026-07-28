@@ -9,6 +9,7 @@ const std = @import("std");
 pub const schema = @import("schema.zig");
 pub const diagnostic = @import("diagnostic.zig");
 pub const catalog = @import("catalog.zig");
+pub const check = @import("check.zig");
 pub const cli = @import("cli.zig");
 pub const compat = @import("compat.zig");
 
@@ -31,6 +32,7 @@ test {
     _ = schema;
     _ = diagnostic;
     _ = catalog;
+    _ = check;
     _ = cli;
     _ = compat;
 }

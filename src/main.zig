@@ -28,6 +28,11 @@ pub fn main(init: std.process.Init) !void {
         switch (err) {
             error.Usage => try stderr.writeAll("myzig: bad usage (try `myzig help`)\n"),
             error.UnknownCommand => {},
+            error.Findings => {
+                try stdout.flush();
+                try stderr.flush();
+                std.process.exit(1);
+            },
             else => try stderr.print("myzig: {s}\n", .{@errorName(err)}),
         }
         try stderr.flush();

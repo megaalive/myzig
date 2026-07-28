@@ -36,7 +36,7 @@ defer gpa.free(data);
 ## CLI
 
 ```text
-myzig check [path] [--ratchet]
+myzig check [path] [--ratchet] [--sarif]
 myzig explain <file:line> [--json|--agent]
 myzig explain --rule <id> [--json|--agent]
 myzig adopt [path]           # editable .myzig/policy.md + baseline if missing

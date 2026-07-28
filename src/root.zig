@@ -23,6 +23,7 @@ pub const permit = @import("permit.zig");
 pub const verify_cost = @import("verify_cost.zig");
 pub const limits = @import("limits.zig");
 pub const agent_contract = @import("agent_contract.zig");
+pub const sarif = @import("sarif.zig");
 
 pub const Certainty = schema.Certainty;
 pub const Severity = schema.Severity;
@@ -57,4 +58,5 @@ test {
     _ = verify_cost;
     _ = limits;
     _ = agent_contract;
+    _ = sarif;
 }

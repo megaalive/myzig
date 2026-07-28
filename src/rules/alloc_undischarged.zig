@@ -30,7 +30,10 @@ pub fn analyzeSource(
                 continue;
             }
             const line_slice = scan.lineSlice(source, abs_index);
-            const discharged = isReturnTransferLine(line_slice) or has_defer_discharge;
+            const binding = bindingNameFromAcquireLine(line_slice);
+            const transferred = isReturnTransferLine(line_slice) or
+                (binding != null and bodyReturnsBinding(body, binding.?));
+            const discharged = transferred or has_defer_discharge;
             if (!discharged) {
                 try out.append(gpa, diagnostic.Diagnostic.fromRule(
                     schema.seed_alloc_undischarged,
@@ -56,6 +59,51 @@ fn isReturnTransferLine(line: []const u8) bool {
     return false;
 }
 
+fn bindingNameFromAcquireLine(line: []const u8) ?[]const u8 {
+    var rest = std.mem.trim(u8, line, " \t");
+    if (std.mem.startsWith(u8, rest, "const ")) {
+        rest = std.mem.trimStart(u8, rest["const ".len..], " \t");
+    } else if (std.mem.startsWith(u8, rest, "var ")) {
+        rest = std.mem.trimStart(u8, rest["var ".len..], " \t");
+    } else return null;
+
+    const eq = std.mem.indexOfScalar(u8, rest, '=') orelse return null;
+    var name = std.mem.trim(u8, rest[0..eq], " \t");
+    if (std.mem.indexOfScalar(u8, name, ':')) |colon| {
+        name = std.mem.trim(u8, name[0..colon], " \t");
+    }
+    if (name.len == 0) return null;
+    if (!std.ascii.isAlphabetic(name[0]) and name[0] != '_') return null;
+    for (name[1..]) |c| {
+        if (!std.ascii.isAlphanumeric(c) and c != '_') return null;
+    }
+    return name;
+}
+
+fn bodyReturnsBinding(body: []const u8, name: []const u8) bool {
+    var i: usize = 0;
+    while (i < body.len) : (i += 1) {
+        if (!std.mem.startsWith(u8, body[i..], "return")) continue;
+        if (i > 0) {
+            const prev = body[i - 1];
+            if (std.ascii.isAlphanumeric(prev) or prev == '_') continue;
+        }
+        var j = i + "return".len;
+        if (j < body.len and (std.ascii.isAlphanumeric(body[j]) or body[j] == '_')) continue;
+        while (j < body.len and std.ascii.isWhitespace(body[j])) : (j += 1) {}
+        if (!std.mem.startsWith(u8, body[j..], name)) continue;
+        const end = j + name.len;
+        if (end < body.len) {
+            const next = body[end];
+            // `return buffer.len` / `return buffer[0]` are not ownership transfers.
+            if (next == '.' or next == '[') continue;
+            if (std.ascii.isAlphanumeric(next) or next == '_') continue;
+        }
+        return true;
+    }
+    return false;
+}
+
 test "leaky local alloc is flagged; defer free and return-transfer are not" {
     const gpa = std.testing.allocator;
     const fail_src =
@@ -76,6 +124,12 @@ test "leaky local alloc is flagged; defer free and return-transfer are not" {
         \\    return try allocator.alloc(u8, n);
         \\}
     ;
+    const local_transfer_src =
+        \\pub fn giveLocal(allocator: anytype, n: usize) ![]u8 {
+        \\    const buffer = try allocator.alloc(u8, n);
+        \\    return buffer;
+        \\}
+    ;
 
     var fail_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
     defer fail_diags.deinit(gpa);
@@ -91,6 +145,11 @@ test "leaky local alloc is flagged; defer free and return-transfer are not" {
     defer transfer_diags.deinit(gpa);
     try analyzeSource("transfer.zig", transfer_src, &transfer_diags, gpa);
     try std.testing.expect(transfer_diags.items.len == 0);
+
+    var local_transfer_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer local_transfer_diags.deinit(gpa);
+    try analyzeSource("local_transfer.zig", local_transfer_src, &local_transfer_diags, gpa);
+    try std.testing.expect(local_transfer_diags.items.len == 0);
 
     const comment_src =
         \\pub fn documented() void {

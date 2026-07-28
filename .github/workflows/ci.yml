@@ -59,6 +59,7 @@ jobs:
           fi
           # Pass fixture must be clean.
           "$BIN" check fixtures/pass/alloc_defer_free.zig
+          "$BIN" check fixtures/pass/alloc_return_local.zig
           "$BIN" check fixtures/pass/file_defer_close.zig
           "$BIN" check fixtures/pass/ptrcast_remarked.zig
           if "$BIN" check fixtures/fail/file_undischarged.zig; then
@@ -140,3 +141,11 @@ jobs:
           "$BIN" limits --sources | grep -q "docs/LIMITS.md"
           "$BIN" agent | grep -q "Self-correction loop"
           "$BIN" agent --full | grep -q "myzig agent rule card"
+          "$BIN" rules --sarif | grep -q "memory.alloc-undischarged"
+          set +e
+          "$BIN" check --sarif fixtures/fail/alloc_undischarged.zig > sarif.json
+          code=$?
+          set -e
+          test "$code" -ne 0
+          grep -q '"ruleId": "memory.alloc-undischarged"' sarif.json
+          grep -q '"version": "2.1.0"' sarif.json

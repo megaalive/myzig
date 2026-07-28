@@ -2,6 +2,7 @@
 
 const std = @import("std");
 const schema = @import("schema.zig");
+const sarif = @import("sarif.zig");
 
 pub const Format = enum {
     text,
@@ -27,8 +28,12 @@ pub fn write(writer: *std.Io.Writer, format: Format) std.Io.Writer.Error!void {
         .json => try writeJson(writer),
         .markdown => try writeMarkdown(writer),
         .agent => try writeAgent(writer),
-        .sarif => try writer.writeAll("{\"version\":\"2.1.0\",\"runs\":[],\"$comment\":\"SARIF export lands with M1+\"}\n"),
+        .sarif => try sarif.writeRulesOnly(writer, "0.0.0"),
     }
+}
+
+pub fn writeSarifRules(writer: *std.Io.Writer, myzig_version: []const u8) std.Io.Writer.Error!void {
+    try sarif.writeRulesOnly(writer, myzig_version);
 }
 
 pub fn writeText(writer: *std.Io.Writer) std.Io.Writer.Error!void {

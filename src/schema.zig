@@ -218,6 +218,7 @@ pub const seed_alloc_undischarged: Rule = .{
     .references = &.{
         "fixtures/fail/alloc_undischarged.zig",
         "fixtures/pass/alloc_defer_free.zig",
+        "fixtures/pass/alloc_return_local.zig",
         "research/incidents/MYZIG-OWN-001.md",
     },
 };

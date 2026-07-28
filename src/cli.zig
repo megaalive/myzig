@@ -12,6 +12,7 @@ const adopt_mod = @import("adopt.zig");
 const verify_cost_mod = @import("verify_cost.zig");
 const limits_mod = @import("limits.zig");
 const agent_mod = @import("agent_contract.zig");
+const sarif_mod = @import("sarif.zig");
 
 pub const Command = enum {
     help,
@@ -65,7 +66,7 @@ pub fn writeHelp(writer: *std.Io.Writer) std.Io.Writer.Error!void {
         \\  myzig <command> [args]
         \\
         \\Commands:
-        \\  check [path] [--receipt] [--prefer-compat] [--ratchet]
+        \\  check [path] [--receipt] [--prefer-compat] [--ratchet] [--sarif]
         \\                            Run ownership checks (optional debt ratchet)
         \\  explain <file:line> [--json|--agent]
         \\                            Ownership narrative + repair choices
@@ -110,13 +111,18 @@ pub fn dispatch(rio: RunIo, argv: []const []const u8) !void {
                     return error.Usage;
                 };
             }
-            try catalog.write(rio.stdout, format);
+            if (format == .sarif) {
+                try catalog.writeSarifRules(rio.stdout, rio.version);
+            } else {
+                try catalog.write(rio.stdout, format);
+            }
         },
         .check => {
             var path: []const u8 = ".";
             var want_receipt = false;
             var prefer_compat = false;
             var want_ratchet = false;
+            var want_sarif = false;
             for (rest) |a| {
                 if (std.mem.eql(u8, a, "--receipt")) {
                     want_receipt = true;
@@ -124,12 +130,18 @@ pub fn dispatch(rio: RunIo, argv: []const []const u8) !void {
                     prefer_compat = true;
                 } else if (std.mem.eql(u8, a, "--ratchet")) {
                     want_ratchet = true;
+                } else if (std.mem.eql(u8, a, "--sarif")) {
+                    want_sarif = true;
                 } else if (std.mem.startsWith(u8, a, "-")) {
                     try rio.stderr.print("myzig check: unknown flag '{s}'\n", .{a});
                     return error.Usage;
                 } else {
                     path = a;
                 }
+            }
+            if (want_receipt and want_sarif) {
+                try rio.stderr.writeAll("myzig check: use only one of --receipt or --sarif\n");
+                return error.Usage;
             }
             if (!prefer_compat) prefer_compat = check_mod.preferCompatMarker(rio.io);
             var result = try check_mod.checkPathOptions(rio.io, rio.allocator, path, .{
@@ -153,6 +165,8 @@ pub fn dispatch(rio: RunIo, argv: []const []const u8) !void {
                     rio.allocator.free(built.cost_claims);
                 }
                 try receipt_mod.writeJson(rio.stdout, built.receipt);
+            } else if (want_sarif) {
+                try sarif_mod.writeRun(rio.stdout, rio.version, result.diagnostics.items);
             } else {
                 try check_mod.writeReport(rio.stdout, result.diagnostics.items);
             }

@@ -97,3 +97,10 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **don't:** Treat chat memory as the ownership policy source of truth
 - **promote-to-code-when:** already promoted → `myzig agent` contract command
 - **incident:** none yet
+
+### F-CLI-006 · Zig 0.17 `trimLeft`/`trimRight` renamed
+- **symptom:** `std.mem` has no member named `trimLeft` (or `trimRight`) on 0.17-dev
+- **do:** Use `std.mem.trimStart` / `trimEnd` (or `trim`)
+- **don't:** Copy snippets that still call `trimLeft`/`trimRight`
+- **promote-to-code-when:** already hit once → keep playbook; optional compat shim only if dogfood apps keep tripping
+- **incident:** none yet

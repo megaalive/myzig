@@ -9,6 +9,7 @@ const friction_mod = @import("friction.zig");
 const receipt_mod = @import("receipt.zig");
 const baseline_mod = @import("baseline.zig");
 const adopt_mod = @import("adopt.zig");
+const verify_cost_mod = @import("verify_cost.zig");
 
 pub const Command = enum {
     help,
@@ -70,7 +71,7 @@ pub fn writeHelp(writer: *std.Io.Writer) std.Io.Writer.Error!void {
         \\                            List rule catalog
         \\  receipt [path]            Emit thin check receipt (JSON)
         \\  friction [--sources]      Living text playbook (update without new code)
-        \\  verify-cost <case>        Leveled ReleaseFast cost witness (stub → M6)
+        \\  verify-cost <case|--list> Leveled cost witness (claimed only after run)
         \\  init                      Create .myzig/ project config
         \\  help                      Show this help
         \\  version                   Show version
@@ -84,13 +85,6 @@ pub fn writeHelp(writer: *std.Io.Writer) std.Io.Writer.Error!void {
 pub fn writeVersion(writer: *std.Io.Writer, version: []const u8) std.Io.Writer.Error!void {
     try writer.print("myzig {s}\n", .{version});
     try writer.print("compat {s}\n", .{compat.adapterName()});
-}
-
-pub fn stubMessage(command: Command) []const u8 {
-    return switch (command) {
-        .verify_cost => "verify-cost: leveled witnesses not implemented yet (M6).",
-        else => "",
-    };
 }
 
 pub fn dispatch(rio: RunIo, argv: []const []const u8) !void {
@@ -145,6 +139,11 @@ pub fn dispatch(rio: RunIo, argv: []const []const u8) !void {
                 );
                 defer built.snap.deinit(rio.allocator);
                 defer rio.allocator.free(built.source_revision);
+                defer {
+                    for (built.cost_owned.items) |s| rio.allocator.free(s);
+                    built.cost_owned.deinit(rio.allocator);
+                    rio.allocator.free(built.cost_claims);
+                }
                 try receipt_mod.writeJson(rio.stdout, built.receipt);
             } else {
                 try check_mod.writeReport(rio.stdout, result.diagnostics.items);
@@ -214,6 +213,11 @@ pub fn dispatch(rio: RunIo, argv: []const []const u8) !void {
             );
             defer built.snap.deinit(rio.allocator);
             defer rio.allocator.free(built.source_revision);
+            defer {
+                for (built.cost_owned.items) |s| rio.allocator.free(s);
+                built.cost_owned.deinit(rio.allocator);
+                rio.allocator.free(built.cost_claims);
+            }
             try receipt_mod.writeJson(rio.stdout, built.receipt);
             if (result.diagnostics.items.len > 0) return error.Findings;
         },
@@ -299,13 +303,28 @@ pub fn dispatch(rio: RunIo, argv: []const []const u8) !void {
             defer bundle.deinit(rio.allocator);
             try friction_mod.write(rio.stdout, bundle, show_sources);
         },
+        .verify_cost => {
+            if (rest.len < 1) return error.Usage;
+            if (std.mem.eql(u8, rest[0], "--list") or std.mem.eql(u8, rest[0], "list")) {
+                try verify_cost_mod.writeList(rio.stdout);
+                return;
+            }
+            const case = verify_cost_mod.findCase(rest[0]) orelse {
+                try rio.stderr.print("myzig verify-cost: unknown case '{s}' (try --list)\n", .{rest[0]});
+                return error.Usage;
+            };
+            const report = try verify_cost_mod.runCase(rio.io, rio.allocator, case, rio.version);
+            defer rio.allocator.free(report.witness);
+            const out_path = try verify_cost_mod.persist(rio.io, rio.allocator, report);
+            defer rio.allocator.free(out_path);
+            try verify_cost_mod.writeText(rio.stdout, report);
+            try rio.stdout.print("wrote {s}\n", .{out_path});
+            if (report.overall == .fail) return error.Findings;
+        },
         .unknown => {
             try rio.stderr.print("myzig: unknown command '{s}'\n\n", .{argv[0]});
             try writeHelp(rio.stderr);
             return error.UnknownCommand;
-        },
-        else => {
-            try rio.stdout.print("{s}\n", .{stubMessage(command)});
         },
     }
 }

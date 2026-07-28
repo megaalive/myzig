@@ -8,12 +8,17 @@ const json_out = @import("json_out.zig");
 const schema = @import("schema.zig");
 const compat = @import("compat.zig");
 const adopt = @import("adopt.zig");
+const verify_cost = @import("verify_cost.zig");
 
 /// Claimed witnesses must only appear when a verify step actually ran.
+pub const CostClaim = struct {
+    case_id: []const u8,
+    status: []const u8,
+    witness: []const u8,
+};
+
 pub const Claimed = struct {
-    /// Present only after `verify-cost` (M6). Never invent a free boolean.
-    verify_cost_status: ?[]const u8 = null,
-    verify_cost_witness: ?[]const u8 = null,
+    verify_cost: []const CostClaim = &.{},
 };
 
 pub const Receipt = struct {
@@ -126,22 +131,25 @@ pub fn writeJson(writer: *std.Io.Writer, r: Receipt) std.Io.Writer.Error!void {
     try writer.writeAll("\n    ]\n");
     try writer.writeAll("  },\n");
     try writer.writeAll("  \"claimed\": ");
-    if (r.claimed.verify_cost_status == null) {
+    if (r.claimed.verify_cost.len == 0) {
         try writer.writeAll("{}\n");
     } else {
         try writer.writeAll("{\n");
-        try writer.writeAll("    \"verify_cost\": {\n");
-        try writer.writeAll("      \"status\": ");
-        try json_out.writeString(writer, r.claimed.verify_cost_status.?);
-        try writer.writeAll(",\n");
-        if (r.claimed.verify_cost_witness) |w| {
-            try writer.writeAll("      \"witness\": ");
-            try json_out.writeString(writer, w);
-            try writer.writeAll("\n");
-        } else {
-            try writer.writeAll("      \"witness\": null\n");
+        try writer.writeAll("    \"verify_cost\": [\n");
+        for (r.claimed.verify_cost, 0..) |c, i| {
+            if (i > 0) try writer.writeAll(",\n");
+            try writer.writeAll("      {\n");
+            try writer.writeAll("        \"case\": ");
+            try json_out.writeString(writer, c.case_id);
+            try writer.writeAll(",\n");
+            try writer.writeAll("        \"status\": ");
+            try json_out.writeString(writer, c.status);
+            try writer.writeAll(",\n");
+            try writer.writeAll("        \"witness\": ");
+            try json_out.writeString(writer, c.witness);
+            try writer.writeAll("\n      }");
         }
-        try writer.writeAll("    }\n");
+        try writer.writeAll("\n    ]\n");
         try writer.writeAll("  }\n");
     }
     try writer.writeAll("}\n");
@@ -155,7 +163,13 @@ pub fn build(
     myzig_version: []const u8,
     prefer_compat: bool,
     diags: []const diagnostic.Diagnostic,
-) !struct { receipt: Receipt, snap: baseline.Snapshot, source_revision: []u8 } {
+) !struct {
+    receipt: Receipt,
+    snap: baseline.Snapshot,
+    source_revision: []u8,
+    cost_claims: []CostClaim,
+    cost_owned: std.ArrayList([]u8),
+} {
     var snap = try baseline.fromDiagnostics(gpa, path, myzig_version, diags);
     errdefer snap.deinit(gpa);
     const source_revision = try resolveSourceRevision(gpa);
@@ -181,6 +195,13 @@ pub fn build(
         baseline_ok = cmp.ok;
     } else |_| {}
 
+    var cost_owned: std.ArrayList([]u8) = .empty;
+    errdefer {
+        for (cost_owned.items) |s| gpa.free(s);
+        cost_owned.deinit(gpa);
+    }
+    const cost_claims = try loadCostClaims(io, gpa, &cost_owned);
+
     const receipt: Receipt = .{
         .myzig_version = myzig_version,
         .compat_adapter = compat.adapterName(),
@@ -198,9 +219,53 @@ pub fn build(
         .unsafe_bitcast = unsafe_bit,
         .baseline_total = baseline_total,
         .baseline_delta_ok = baseline_ok,
-        .claimed = .{},
+        .claimed = .{ .verify_cost = cost_claims },
     };
-    return .{ .receipt = receipt, .snap = snap, .source_revision = source_revision };
+    return .{
+        .receipt = receipt,
+        .snap = snap,
+        .source_revision = source_revision,
+        .cost_claims = cost_claims,
+        .cost_owned = cost_owned,
+    };
+}
+
+fn loadCostClaims(
+    io: compat.Io,
+    gpa: std.mem.Allocator,
+    owned: *std.ArrayList([]u8),
+) ![]CostClaim {
+    var claims: std.ArrayList(CostClaim) = .empty;
+    errdefer claims.deinit(gpa);
+
+    for (verify_cost.builtin_cases) |c| {
+        const path = try std.fmt.allocPrint(gpa, "{s}/{s}.json", .{ verify_cost.witnesses_dir, c.id });
+        defer gpa.free(path);
+        const bytes = compat.readFileAlloc(io, gpa, path, 512 * 1024) catch continue;
+        defer gpa.free(bytes);
+
+        var parsed = std.json.parseFromSlice(std.json.Value, gpa, bytes, .{}) catch continue;
+        defer parsed.deinit();
+        const root = parsed.value.object;
+        const case_id = root.get("case").?.string;
+        const status = root.get("status").?.string;
+        const witness = root.get("witness").?.string;
+
+        const case_dup = try gpa.dupe(u8, case_id);
+        try owned.append(gpa, case_dup);
+        const status_dup = try gpa.dupe(u8, status);
+        try owned.append(gpa, status_dup);
+        const witness_dup = try gpa.dupe(u8, witness);
+        try owned.append(gpa, witness_dup);
+
+        try claims.append(gpa, .{
+            .case_id = case_dup,
+            .status = status_dup,
+            .witness = witness_dup,
+        });
+    }
+
+    return try claims.toOwnedSlice(gpa);
 }
 
 test "receipt json contains observed findings and empty claimed" {

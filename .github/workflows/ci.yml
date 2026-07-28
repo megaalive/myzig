@@ -128,3 +128,11 @@ jobs:
           fi
           "$BIN" baseline fixtures/fail > /dev/null
           "$BIN" check --ratchet fixtures/fail
+          # M6 permits + verify-cost
+          "$BIN" check fixtures/pass/ptrcast_remarked.zig
+          "$BIN" verify-cost --list | grep -q id-passthrough
+          "$BIN" verify-cost id-passthrough
+          test -f .myzig/cost-witnesses/id-passthrough.json
+          "$BIN" receipt fixtures/pass/alloc_defer_free.zig > receipt-cost.json
+          grep -q '"verify_cost"' receipt-cost.json
+          grep -q 'id-passthrough' receipt-cost.json

@@ -4,8 +4,17 @@ const std = @import("std");
 const schema = @import("../schema.zig");
 const diagnostic = @import("../diagnostic.zig");
 const scan = @import("../scan.zig");
+const permit = @import("../permit.zig");
 
-const needles = [_][]const u8{ "@ptrCast(", "@alignCast(" };
+const Needle = struct {
+    text: []const u8,
+    kind: permit.Kind,
+};
+
+const needles = [_]Needle{
+    .{ .text = "@ptrCast(", .kind = .ptrcast },
+    .{ .text = "@alignCast(", .kind = .aligncast },
+};
 
 pub fn analyzeSource(
     path: []const u8,
@@ -15,12 +24,21 @@ pub fn analyzeSource(
 ) !void {
     var search_from: usize = 0;
     while (search_from < source.len) {
-        const hit = scan.nextNeedle(source, search_from, &needles) orelse break;
+        var best_idx: ?usize = null;
+        var best_needle: ?Needle = null;
+        for (needles) |n| {
+            if (std.mem.indexOfPos(u8, source, search_from, n.text)) |idx| {
+                if (best_idx == null or idx < best_idx.?) {
+                    best_idx = idx;
+                    best_needle = n;
+                }
+            }
+        }
+        const hit = best_idx orelse break;
+        const n = best_needle.?;
         const line = scan.lineSlice(source, hit);
-        const remarked = std.mem.indexOf(u8, line, "safety:") != null or
-            std.mem.indexOf(u8, line, "myzig.permit") != null or
-            std.mem.indexOf(u8, line, "unsafe.permit") != null;
-        if (!remarked) {
+        const parsed = permit.parseLine(line, n.kind);
+        if (!parsed.ok) {
             try out.append(gpa, diagnostic.Diagnostic.fromRule(
                 schema.seed_ptrcast_unremarked,
                 .convention,
@@ -45,7 +63,7 @@ test "ptrCast without remark is flagged" {
     ;
     const pass_src =
         \\pub fn ok(p: *anyopaque) *u8 {
-        \\    return @ptrCast(p); // safety: FFI opaque handle
+        \\    return @ptrCast(p); // myzig.permit(ptrcast): FFI opaque handle
         \\}
     ;
     var fail_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;

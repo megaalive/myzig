@@ -45,10 +45,13 @@ myzig friction [--sources]   # living text tips; update without new Zig code
 myzig rules [--json|--markdown|--agent|--sarif]
 myzig receipt [path]
 myzig verify-cost <case>
+myzig verify-cost --list
 myzig init
 ```
 
 Ratchet: after `myzig baseline`, CI can run `myzig check --ratchet <path>` to reject **new** debt while accepting the snapshot.
+
+Cost witnesses: `myzig verify-cost id-passthrough` writes `.myzig/cost-witnesses/…`; only then may `myzig receipt` include `claimed.verify_cost`.
 
 ## Layout
 

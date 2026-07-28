@@ -72,7 +72,14 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 
 ### F-CLI-003 · Receipts bind observed facts; claimed stays empty
 - **symptom:** Agent invents `releasefast_equivalence: true` without running verify-cost
-- **do:** Use `myzig receipt`; read `observed.*`; only trust `claimed` when a witness field was actually produced
+- **do:** Use `myzig receipt`; read `observed.*`; only trust `claimed` when a witness field was actually produced via `myzig verify-cost <case>`
 - **don't:** Hand-edit claimed witnesses into CI artifacts
-- **promote-to-code-when:** already promoted → M4 receipt binding (verify-cost still M6)
+- **promote-to-code-when:** already promoted → M4 receipt + M6 verify-cost
+- **incident:** none yet
+
+### F-OWN-002 · Prefer structured myzig.permit(kind)
+- **symptom:** `@ptrCast` without remark; or wrong permit kind
+- **do:** `// myzig.permit(ptrcast): <reason>` (see `docs/permits.md`)
+- **don't:** Silent casts; mismatched `permit(bitcast)` on `@ptrCast`
+- **promote-to-code-when:** already promoted → permit kinds in detector
 - **incident:** none yet

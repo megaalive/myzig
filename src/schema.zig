@@ -6,7 +6,7 @@
 const std = @import("std");
 
 /// Bumped when seed rule set identity changes in a receipt-relevant way.
-pub const ruleset_revision: []const u8 = "0.0.0-seed4";
+pub const ruleset_revision: []const u8 = "0.0.0-seed5";
 
 pub const Certainty = enum {
     /// Expensive; only when local facts suffice. Heuristic AST rules must not use this as ceiling.
@@ -264,14 +264,21 @@ pub const seed_ptrcast_unremarked: Rule = .{
     .message = "pointer cast lacks an adjacent safety/permit remark",
     .explanation =
     \\`@ptrCast` / `@alignCast` are explicit unsafe operations. Early myzig asks
-    \\for an adjacent `// safety:` or permit remark so the reason stays auditable.
+    \\for an adjacent remark so the reason stays auditable:
+    \\  `// safety: <reason>`
+    \\  `// myzig.permit(ptrcast): <reason>`  (kind must match the cast)
     \\This is a convention signal, not a proof of undefined behavior.
     ,
     .repairs = &.{
         .{
+            .tier = .canonical,
+            .intent = "structured_permit",
+            .summary = "Add `// myzig.permit(ptrcast): <reason>` (or aligncast) on the cast line.",
+        },
+        .{
             .tier = .suggestion,
             .intent = "document_unsafe",
-            .summary = "Add `// safety: <reason>` on the cast line, or a future `unsafe.permit` form.",
+            .summary = "Add `// safety: <reason>` when a structured permit kind is not yet chosen.",
         },
     },
     .references = &.{

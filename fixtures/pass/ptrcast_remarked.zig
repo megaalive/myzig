@@ -1,5 +1,5 @@
-//! Pass fixture for `unsafe.ptrcast-unremarked`.
+//! Pass fixture for `unsafe.ptrcast-unremarked` with structured permit.
 
 pub fn castOpaque(p: *anyopaque) *u8 {
-    return @ptrCast(p); // safety: caller guarantees *u8 payload
+    return @ptrCast(p); // myzig.permit(ptrcast): caller guarantees *u8 payload
 }

@@ -43,6 +43,9 @@ myzig's early detectors are **local heuristics**, not whole-program proof.
 | Load/Unload | `name.unload` matches init; no `Load*` acquire detector (`EXT-STUDY-025`) |
 | Context order | GPU-after-window and staging unload are playbook only (`EXT-STUDY-026`) |
 | begin/end modes | Mode stacks not tracked (`EXT-STUDY-027`) |
+| Post-Zig samples | Non-Zig runtimes teach shapes only — not detectors (`EXT-STUDY-028`) |
+| Borrowed arenas | Outlives + null→global dual heap not modeled (`EXT-STUDY-029`) |
+| Scratch buffers | Single-buffer / nullable allocator APIs are playbook (`EXT-STUDY-030`) |
 
 ## Product stance
 

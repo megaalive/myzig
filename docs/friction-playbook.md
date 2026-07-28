@@ -300,3 +300,24 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **don't:** Treat begin/end as allocator acquires in alloc rules
 - **promote-to-code-when:** playbook until mode-stack modeling exists
 - **incident:** EXT-STUDY-027
+
+### F-OWN-031 · Post-Zig runtimes are shape references only
+- **symptom:** expecting Zig fixtures / AST needles from a runtime that no longer ships Zig sources
+- **do:** Extract allocator *contracts* (arena, scratch, optional heap); ignore host-language syntax
+- **don't:** Promote non-Zig APIs into seed detectors
+- **promote-to-code-when:** playbook / study boundary
+- **incident:** EXT-STUDY-028
+
+### F-OWN-032 · Borrowed arenas need an outlives contract
+- **symptom:** resetting/moving an arena while thread-local / borrowed `Allocator` wrappers still allocate
+- **do:** Document “pointee outlives every alloc”; null/absent scope → explicit global heap path
+- **don't:** Mix frees across arena vs global without a heap-agnostic free story
+- **promote-to-code-when:** playbook until pointer+dual-heap CFG exists
+- **incident:** EXT-STUDY-029
+
+### F-OWN-033 · Single-buffer scratch; optional allocators
+- **symptom:** GPA churn for temporary parse/format buffers, or forcing a fake allocator into empty values
+- **do:** Reuse one buffer + reset/scope; use `?Allocator` / nullable vtable; prefer `stackFallback` / FBA when it fits
+- **don't:** Call per-pointer `free` on a no-op scratch API and assume GPA sees it
+- **promote-to-code-when:** playbook; compat helper only if dogfood repeats
+- **incident:** EXT-STUDY-030

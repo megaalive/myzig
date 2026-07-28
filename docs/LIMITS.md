@@ -59,6 +59,7 @@ Also see `docs/BLINDSPOTS.md` (analyzer detail) and `docs/friction-playbook.md`.
 - Inline suppressions: `// myzig-disable-next-line` / `myzig-disable-current-line` [`rule_id…`] (`EXT-STUDY-005`).
 - `.init(` bindings without `.deinit` / `.destroy` / `.unload` / return transfer are convention notes (`EXT-STUDY-012`, `EXT-STUDY-023`, `EXT-STUDY-025`); `return .{ .f = name }` transfers (`EXT-STUDY-020`).
 - Optional `myzig.compat.PhaseAllocator` seals alloc capability after startup (`EXT-STUDY-010`).
+- Post-Zig / foreign runtimes are allocator-*shape* references only (`EXT-STUDY-028`); borrowed-arena and single-buffer scratch tips stay playbook (`EXT-STUDY-029`, `EXT-STUDY-030`).
 
 ## Dogfood snapshot
 

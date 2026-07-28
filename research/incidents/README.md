@@ -51,6 +51,9 @@ Rules (and compat/contract improvements) are born from incidents.
 | `EXT-STUDY-025` | Load/Unload resource pairing (`.unload`) |
 | `EXT-STUDY-026` | Staging unload + graphics context order |
 | `EXT-STUDY-027` | begin/end mode scopes |
+| `EXT-STUDY-028` | Post-Zig runtime = allocator-shape reference only |
+| `EXT-STUDY-029` | Borrowed arena ptr + null→global fallback |
+| `EXT-STUDY-030` | Single-buffer scratch + nullable allocator |
 | `ZRIG-DOGFOOD-001` | Clean prefer-compat ratchet baseline |
 | `AGENT-STD-001` / `002` | std churn → compat + volatile rule |
 | `AGENT-CLI-001` / `002` | Clean exits; exhaustive CLI / witness hash |

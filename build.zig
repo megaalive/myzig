@@ -8,6 +8,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/root.zig"),
         .target = target,
     });
+    mod.link_libc = true;
 
     const exe = b.addExecutable(.{
         .name = "myzig",
@@ -20,6 +21,7 @@ pub fn build(b: *std.Build) void {
             },
         }),
     });
+    exe.root_module.link_libc = true;
 
     b.installArtifact(exe);
 

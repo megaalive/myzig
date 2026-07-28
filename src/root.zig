@@ -8,6 +8,7 @@ const std = @import("std");
 
 pub const schema = @import("schema.zig");
 pub const cli = @import("cli.zig");
+pub const compat = @import("compat.zig");
 
 pub const Certainty = schema.Certainty;
 pub const Severity = schema.Severity;
@@ -25,4 +26,5 @@ pub const version: []const u8 = "0.0.0";
 test {
     _ = schema;
     _ = cli;
+    _ = compat;
 }

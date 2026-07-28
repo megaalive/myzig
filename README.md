@@ -6,9 +6,9 @@ myzig focuses on **ownership reasoning and evidence**: obligations, honest certa
 structured repair choices, and auditable receipts — while keeping ordinary Zig
 first-class (no mandatory imports, no dialect, no ReleaseFast tax).
 
-This repository is early scaffolding. The first product milestone is one real
-defect loop (rule → explain → repair → fixtures → agent receipt), not a large
-checker catalog.
+This repository is early scaffolding. Beside the ownership coach, **`myzig.compat`**
+offers a narrow façade over high-churn Zig std surfaces (fs/dir/env/path/time) so
+dogfood apps like zrig do not rewrite call sites on every toolchain bump.
 
 ## Build
 
@@ -18,6 +18,19 @@ Requires a recent Zig 0.17 development toolchain.
 zig build
 zig build test
 zig build run -- --help
+```
+
+## Library highlights
+
+```zig
+const myzig = @import("myzig");
+
+// Coach schemas (M0)
+_ = myzig.schema.seed_alloc_undischarged;
+
+// Std insulation (M0b) — prefer over raw std.Io.Dir / env / time
+const data = try myzig.compat.readFileAlloc(io, gpa, "file.txt", 1024 * 1024);
+defer gpa.free(data);
 ```
 
 ## CLI (stubs)

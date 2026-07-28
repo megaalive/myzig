@@ -83,6 +83,7 @@ jobs:
           "$BIN" check fixtures/pass/alloc_field_store.zig
           "$BIN" check fixtures/pass/alloc_arena_backed.zig
           "$BIN" check fixtures/pass/method_create_store.zig
+          "$BIN" check fixtures/pass/init_defer_deinit.zig
           "$BIN" check fixtures/pass/file_defer_close.zig
           "$BIN" check fixtures/pass/file_return.zig
           "$BIN" check fixtures/pass/ptrcast_remarked.zig
@@ -101,6 +102,10 @@ jobs:
           fi
           if "$BIN" check fixtures/fail/swallow_error.zig; then
             echo "expected swallow error finding" >&2
+            exit 1
+          fi
+          if "$BIN" check fixtures/fail/init_without_deinit.zig; then
+            echo "expected init-without-deinit finding" >&2
             exit 1
           fi
           if "$BIN" check fixtures/fail/file_undischarged.zig; then

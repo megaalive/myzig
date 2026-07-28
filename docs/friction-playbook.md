@@ -174,3 +174,38 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **don't:** Expect every `.create(` to be an ownership acquire
 - **promote-to-code-when:** already promoted → single-arg `.create(` filter
 - **incident:** EXT-STUDY-009
+
+### F-OWN-013 · Pair init with deinit (or transfer)
+- **symptom:** `var x = try Foo.init(...)` with no `x.deinit` and no `return x`
+- **do:** `defer x.deinit(...)` or return/store the value to the owner
+- **don't:** Assume every `.init` is fire-and-forget
+- **promote-to-code-when:** already promoted → `lifecycle.init-without-deinit`
+- **incident:** EXT-STUDY-012
+
+### F-OWN-014 · Capability has a phase
+- **symptom:** runtime alloc after “startup finished” in static-style programs
+- **do:** Seal the allocator (`PhaseAllocator.seal`) or document the phase policy
+- **don't:** Copy “all memory at startup” into every request-scoped app
+- **promote-to-code-when:** already promoted → `myzig.compat.PhaseAllocator`
+- **incident:** EXT-STUDY-010
+
+### F-OWN-015 · Encode the mental model before fuzzing
+- **symptom:** relying on fuzz/simulation alone to invent ownership rules
+- **do:** Obligation → assertions/evidence → explain/repair → fuzz last
+- **don't:** Mandate assertion counts or line caps as myzig policy
+- **promote-to-code-when:** playbook (method); density rules intentionally not coded
+- **incident:** EXT-STUDY-011
+
+### F-OWN-016 · FFI cleanup is a separate contract
+- **symptom:** Zig leak checks clean while C/OS/GPU resources still leak
+- **do:** Document who frees across the FFI boundary; consider Valgrind-class tools
+- **don't:** Treat GPA leak detection as whole-program proof
+- **promote-to-code-when:** future `ffi.*` rules if incidents repeat
+- **incident:** EXT-STUDY-013
+
+### F-OWN-017 · Completions need stable storage
+- **symptom:** stack completion reused/moved while async work is outstanding
+- **do:** Keep caller-owned completion alive until callback; drain before deinit
+- **don't:** Treat completion like a plain value that can be copied freely
+- **promote-to-code-when:** playbook until CFG of submissions exists
+- **incident:** EXT-STUDY-014

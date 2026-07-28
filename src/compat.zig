@@ -77,8 +77,11 @@ pub fn adapterName() []const u8 {
     return adapter.name;
 }
 
+pub const PhaseAllocator = @import("compat/phase_allocator.zig");
+
 test {
     _ = adapter;
+    _ = PhaseAllocator;
 }
 
 test "compat surface is wired" {

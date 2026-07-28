@@ -6,7 +6,7 @@
 const std = @import("std");
 
 /// Bumped when seed rule set identity changes in a receipt-relevant way.
-pub const ruleset_revision: []const u8 = "0.0.0-seed8";
+pub const ruleset_revision: []const u8 = "0.0.0-seed9";
 
 pub const Certainty = enum {
     /// Expensive; only when local facts suffice. Heuristic AST rules must not use this as ceiling.
@@ -461,6 +461,34 @@ pub const seed_swallow_error: Rule = .{
     },
 };
 
+pub const seed_init_without_deinit: Rule = .{
+    .id = "lifecycle.init-without-deinit",
+    .category = .lifetime,
+    .default_severity = .note,
+    .certainty_ceiling = .convention,
+    .obligation = .other,
+    .detector = .local_ast,
+    .discharges = &.{.other},
+    .message = "init without matching deinit on the same binding",
+    .explanation =
+    \\Resource-shaped values constructed with `.init(` usually need a matching
+    \\`.deinit` (often under `defer`). Returning the binding counts as transfer.
+    \\Convention only — not every `.init` is a resource.
+    ,
+    .repairs = &.{
+        .{
+            .tier = .canonical,
+            .intent = "local_lifetime",
+            .summary = "Add `defer name.deinit(...)` (or transfer ownership to the caller).",
+        },
+    },
+    .references = &.{
+        "fixtures/fail/init_without_deinit.zig",
+        "fixtures/pass/init_defer_deinit.zig",
+        "research/incidents/EXT-STUDY-012.md",
+    },
+};
+
 pub const seed_rules: []const Rule = &.{
     seed_alloc_undischarged,
     seed_file_undischarged,
@@ -470,6 +498,7 @@ pub const seed_rules: []const Rule = &.{
     seed_empty_errdefer,
     seed_hidden_allocator,
     seed_swallow_error,
+    seed_init_without_deinit,
 };
 
 test "certainty ceiling clamps proven down to likely" {

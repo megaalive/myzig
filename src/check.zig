@@ -10,6 +10,7 @@ const volatile_std = @import("rules/volatile_std.zig");
 const empty_defer = @import("rules/empty_defer.zig");
 const hidden_allocator = @import("rules/hidden_allocator.zig");
 const swallow_error = @import("rules/swallow_error.zig");
+const init_without_deinit = @import("rules/init_without_deinit.zig");
 const suppress = @import("suppress.zig");
 
 pub const Options = struct {
@@ -105,6 +106,7 @@ fn checkFile(
     try empty_defer.analyzeSource(path, source, out, gpa);
     try hidden_allocator.analyzeSource(path, source, out, gpa);
     try swallow_error.analyzeSource(path, source, out, gpa);
+    try init_without_deinit.analyzeSource(path, source, out, gpa);
     suppress.filterSuppressed(source, out);
 }
 
@@ -129,5 +131,6 @@ test {
     _ = empty_defer;
     _ = hidden_allocator;
     _ = swallow_error;
+    _ = init_without_deinit;
     _ = suppress;
 }

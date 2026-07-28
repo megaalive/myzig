@@ -34,6 +34,7 @@ Also see `docs/BLINDSPOTS.md` (analyzer detail) and `docs/friction-playbook.md`.
 | `lifecycle.empty-errdefer` | convention | Same as empty-defer on error path |
 | `ownership.hidden-allocator` | convention | FN: aliased globals / non-needle heaps; skips `test` |
 | `lifecycle.swallow-error` | convention | Comment-only catch allowed; FN: non-block catch shapes |
+| `lifecycle.init-without-deinit` | convention | Only `try …init(`; FP: examples inside string literals; FN: infallible init |
 
 ## Tuned FP / FN guards
 
@@ -55,6 +56,8 @@ Also see `docs/BLINDSPOTS.md` (analyzer detail) and `docs/friction-playbook.md`.
 - Hidden `page_allocator` / `c_allocator` use on alloc/free lines is a convention note (`EXT-STUDY-004`).
 - Empty `catch {}` / `catch unreachable` are convention notes; comment-only catch and documented unreachable are allowed (`EXT-STUDY-005`, `EXT-STUDY-009`).
 - Inline suppressions: `// myzig-disable-next-line` / `myzig-disable-current-line` [`rule_id…`] (`EXT-STUDY-005`).
+- `.init(` bindings without `.deinit` / return transfer are convention notes (`EXT-STUDY-012`).
+- Optional `myzig.compat.PhaseAllocator` seals alloc capability after startup (`EXT-STUDY-010`).
 
 ## Dogfood snapshot
 
@@ -62,7 +65,7 @@ Also see `docs/BLINDSPOTS.md` (analyzer detail) and `docs/friction-playbook.md`.
 |---------|------|
 | zrig | `check --prefer-compat --ratchet src` held at 0 findings (see `ZRIG-DOGFOOD-001`) |
 | azig | Memory heuristics calibrated to **0** alloc findings on `src/`; leftover is ptrcast remarks (`AZIG-OWN-008`) + arena coarseness (`AZIG-OWN-001`) |
-| external studies | Pattern notes only (`EXT-STUDY-*`); do not clone CFG/ZIR or general lint hosts |
+| external studies | Pattern notes only (`EXT-STUDY-*`); take checkable methods, not domain-specific bans |
 
 ## Product stance
 

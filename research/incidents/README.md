@@ -33,6 +33,12 @@ Rules (and compat/contract improvements) are born from incidents.
 | `EXT-STUDY-007` | Field-store ownership transfer |
 | `EXT-STUDY-008` | Arena-backed acquires |
 | `EXT-STUDY-009` | `allocator.create(T)` vs method create; documented unreachable |
+| `EXT-STUDY-010` | Phase-gated allocator capability (`PhaseAllocator`) |
+| `EXT-STUDY-011` | Encode obligations as assertions (method, not density rules) |
+| `EXT-STUDY-012` | init/deinit symmetry convention |
+| `EXT-STUDY-013` | FFI external-resource blind spots (future) |
+| `EXT-STUDY-014` | Completion/callback storage stability (playbook) |
+| `EXT-STUDY-015` | Language repo as semantic reference, not app template |
 | `ZRIG-DOGFOOD-001` | Clean prefer-compat ratchet baseline |
 | `AGENT-STD-001` / `002` | std churn → compat + volatile rule |
 | `AGENT-CLI-001` / `002` | Clean exits; exhaustive CLI / witness hash |

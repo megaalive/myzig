@@ -9,7 +9,7 @@ first-class (no mandatory imports, no dialect, no ReleaseFast tax).
 Beside the ownership coach, **`myzig.compat`** offers a narrow façade over
 high-churn Zig std surfaces (fs/dir/env/path/time) so dogfood apps like zrig do
 not rewrite call sites on every toolchain bump. Current ruleset revision:
-`0.0.0-seed25`.
+`0.0.0-seed26`.
 
 ## Build
 

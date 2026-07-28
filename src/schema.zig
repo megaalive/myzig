@@ -6,7 +6,7 @@
 const std = @import("std");
 
 /// Bumped when seed rule set identity changes in a receipt-relevant way.
-pub const ruleset_revision: []const u8 = "0.0.0-seed25";
+pub const ruleset_revision: []const u8 = "0.0.0-seed26";
 
 pub const Certainty = enum {
     /// Expensive; only when local facts suffice. Heuristic AST rules must not use this as ceiling.

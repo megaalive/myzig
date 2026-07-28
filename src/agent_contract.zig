@@ -44,12 +44,13 @@ pub fn writeContract(writer: *std.Io.Writer, version: []const u8) std.Io.Writer.
         \\
         \\- Legacy accept: `myzig adopt` → edit `.myzig/policy.md` → `myzig baseline`
         \\- CI gate: `myzig check --ratchet <path>`
-        \\- Std insulation: `.myzig/prefer_compat` or `--prefer-compat` (`F-STD-001`); prefer `compat.copyFile`/`deleteFile` (`F-STD-004`)
+        \\- Std insulation: `.myzig/prefer_compat` or `--prefer-compat` (`F-STD-001`); prefer `compat.copyFile`/`deleteFile`/`renameFile` (`F-STD-004`)
         \\- Local CI parity: `powershell -File scripts/ci.ps1` (matches Actions smoke)
         \\- Transfer tips: two-step field store / put / `takeOwnership*` / same-file callee free (`F-OWN-065`)
         \\- FFI wrappers: `ffi.wrapper-init-without-deinit` on `c.` files (`F-OWN-066`)
         \\- Sentinel types: keep `[:0]u8` from `dupeZ` / `allocSentinel` (`F-OWN-067`)
-        \\- Dogfood apps (zrig): clean denial exits (`F-CLI-007`); prove HTTP on loopback first (`F-HARNESS-003`); plans+receipts+artifacts (`F-HARNESS-004`); respect stop/continue flags (`F-HARNESS-005`); MCP stdio is tools-only (`F-HARNESS-006`); prefer named MCP fields (`F-HARNESS-007`); V4 router locked
+        \\- Dir checks: diagnostic paths must be owned for the result lifetime (`F-CLI-008`)
+        \\- Dogfood apps (zrig): clean denial exits (`F-CLI-007`); prove HTTP on loopback first (`F-HARNESS-003`); plans+receipts+artifacts (`F-HARNESS-004`); respect stop/continue flags (`F-HARNESS-005`); MCP stdio is tools-only (`F-HARNESS-006`); prefer named MCP fields (`F-HARNESS-007`); Cursor Windows needs `zrig.exe` (`F-HARNESS-008`); V4 router locked
         \\
     );
 }

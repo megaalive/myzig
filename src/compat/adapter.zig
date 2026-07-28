@@ -24,6 +24,7 @@ pub const EnvError = impl.EnvError;
 pub const AccessError = impl.AccessError;
 pub const CopyError = impl.CopyError;
 pub const DeleteError = impl.DeleteError;
+pub const RenameError = impl.RenameError;
 
 pub const readFileAlloc = impl.readFileAlloc;
 pub const writeFile = impl.writeFile;
@@ -34,6 +35,7 @@ pub const createDirPath = impl.createDirPath;
 pub const access = impl.access;
 pub const copyFile = impl.copyFile;
 pub const deleteFile = impl.deleteFile;
+pub const renameFile = impl.renameFile;
 pub const envGet = impl.envGet;
 pub const currentPathAlloc = impl.currentPathAlloc;
 pub const unixSeconds = impl.unixSeconds;

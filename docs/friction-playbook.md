@@ -72,10 +72,17 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 
 ### F-STD-004 · Prefer compat for file copy/delete
 - **symptom:** Dogfood tools call raw `std.Io.Dir.copyFile` / `deleteFile` and break on the next Zig reshape
-- **do:** `myzig.compat.copyFile` / `deleteFile` (zrig: `files.copy` / `files.delete`)
-- **don't:** Re-learn Dir.copyFile argument order in every app
-- **promote-to-code-when:** already promoted → `compat.copyFile` / `deleteFile`
+- **do:** `myzig.compat.copyFile` / `deleteFile` / `renameFile` (zrig: `files.copy` / `files.delete` / `files.move`)
+- **don't:** Re-learn Dir.copyFile/rename argument order in every app
+- **promote-to-code-when:** already promoted → `compat.copyFile` / `deleteFile` / `renameFile`
 - **incident:** ZRIG-DOGFOOD-009
+
+### F-CLI-008 · Directory-check paths must outlive the walk
+- **symptom:** `myzig check <dir>` prints `¬¬¬` / `0xAA`-filled paths; SARIF URIs unreadable
+- **do:** Keep a durable owned path per file for diagnostics (do not free the walk `child` path while findings still point at it)
+- **don't:** Assume GPA fills are “encoding issues” when dir checks look poisoned
+- **promote-to-code-when:** already promoted → `check.Result.owned_paths` + path dupe in `checkFile`
+- **incident:** AZIG-OWN-009
 
 ### F-OWN-001 · Do not invent ownership policy
 - **symptom:** Agent adds `defer free` (or transfers) without knowing intent; or claims `proven`
@@ -637,3 +644,10 @@ elease already helps
 - **don't:** Assume map iteration order of string fields is stable across hosts
 - **promote-to-code-when:** already promoted → per-tool schemas in zrig `writeInputSchema`
 - **incident:** ZRIG-DOGFOOD-008
+
+### F-HARNESS-008 · Cursor MCP on Windows needs zrig.exe path
+- **symptom:** Cursor shows zrig MCP as failed / cannot spawn; `${workspaceFolder}/zig-out/bin/zrig` without `.exe`
+- **do:** Use project `.cursor/mcp.json` with an absolute `…/zrig.exe` (see zrig docs/mcp-client.md); `zig build` first; reload MCP
+- **don't:** Only edit the user-global `~/.cursor/mcp.json` and forget the Windows extension
+- **promote-to-code-when:** playbook + checked-in `.cursor/mcp.json` example
+- **incident:** ZRIG-DOGFOOD-010

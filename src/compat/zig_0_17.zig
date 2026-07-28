@@ -27,6 +27,7 @@ pub const EnvError = error{ OutOfMemory, EnvironmentVariableNotFound };
 pub const AccessError = IoStd.Dir.AccessError || IoStd.Cancelable;
 pub const CopyError = IoStd.Dir.CopyFileError || IoStd.Cancelable;
 pub const DeleteError = IoStd.Dir.DeleteFileError || IoStd.Cancelable;
+pub const RenameError = IoStd.Dir.RenameError || IoStd.Cancelable;
 
 pub fn readFileAlloc(io: Io, gpa: std.mem.Allocator, path: []const u8, limit: usize) ReadError![]u8 {
     return IoStd.Dir.cwd().readFileAlloc(io, path, gpa, .limited(limit));
@@ -94,6 +95,11 @@ pub fn deleteFile(io: Io, path: []const u8) DeleteError!void {
     try IoStd.Dir.cwd().deleteFile(io, path);
 }
 
+pub fn renameFile(io: Io, old_path: []const u8, new_path: []const u8) RenameError!void {
+    const cwd = IoStd.Dir.cwd();
+    try IoStd.Dir.rename(cwd, old_path, cwd, new_path, io);
+}
+
 pub fn envGet(gpa: std.mem.Allocator, key: []const u8) EnvError![]u8 {
     const key_z = try gpa.dupeSentinel(u8, key, 0);
     defer gpa.free(key_z);
@@ -139,6 +145,15 @@ test "write read list stat roundtrip" {
     try std.testing.expectEqualStrings("hello-compat", copied);
     try deleteFile(io, copy_path);
     try std.testing.expectError(error.FileNotFound, access(io, copy_path));
+
+    const moved_path = ".zig-cache/myzig-compat-test/roundtrip-moved.txt";
+    try copyFile(io, file_path, copy_path);
+    try renameFile(io, copy_path, moved_path);
+    try std.testing.expectError(error.FileNotFound, access(io, copy_path));
+    const moved = try readFileAlloc(io, gpa, moved_path, 1024);
+    defer gpa.free(moved);
+    try std.testing.expectEqualStrings("hello-compat", moved);
+    try deleteFile(io, moved_path);
 
     const st = try statFile(io, file_path);
     try std.testing.expect(st.kind == .file);

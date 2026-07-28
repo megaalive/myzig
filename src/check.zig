@@ -22,8 +22,12 @@ pub const Options = struct {
 
 pub const Result = struct {
     diagnostics: std.ArrayList(diagnostic.Diagnostic),
+    /// Paths owned by this result (duped for directory walks so findings outlive `child` frees).
+    owned_paths: std.ArrayList([]u8),
 
     pub fn deinit(self: *Result, gpa: std.mem.Allocator) void {
+        for (self.owned_paths.items) |p| gpa.free(p);
+        self.owned_paths.deinit(gpa);
         self.diagnostics.deinit(gpa);
     }
 };
@@ -42,13 +46,16 @@ pub fn checkPathOptions(
     path: []const u8,
     options: Options,
 ) !Result {
-    var result = Result{ .diagnostics = .empty };
+    var result = Result{
+        .diagnostics = .empty,
+        .owned_paths = .empty,
+    };
     errdefer result.deinit(gpa);
 
     const st = try compat.statFile(io, path);
     switch (st.kind) {
-        .file => try checkFile(io, gpa, path, &result.diagnostics, options),
-        .directory => try checkDir(io, gpa, path, &result.diagnostics, options),
+        .file => try checkFile(io, gpa, path, &result, options),
+        .directory => try checkDir(io, gpa, path, &result, options),
         else => return error.UnsupportedPath,
     }
     return result;
@@ -58,7 +65,7 @@ fn checkDir(
     io: compat.Io,
     gpa: std.mem.Allocator,
     path: []const u8,
-    out: *std.ArrayList(diagnostic.Diagnostic),
+    result: *Result,
     options: Options,
 ) !void {
     const names = try compat.listDirAlloc(io, gpa, path);
@@ -80,10 +87,10 @@ fn checkDir(
 
         const st = compat.statFile(io, child) catch continue;
         switch (st.kind) {
-            .directory => try checkDir(io, gpa, child, out, options),
+            .directory => try checkDir(io, gpa, child, result, options),
             .file => {
                 if (std.mem.endsWith(u8, name, ".zig")) {
-                    try checkFile(io, gpa, child, out, options);
+                    try checkFile(io, gpa, child, result, options);
                 }
             },
             else => {},
@@ -95,25 +102,31 @@ fn checkFile(
     io: compat.Io,
     gpa: std.mem.Allocator,
     path: []const u8,
-    out: *std.ArrayList(diagnostic.Diagnostic),
+    result: *Result,
     options: Options,
 ) !void {
-    const source = try compat.readFileAlloc(io, gpa, path, 8 * 1024 * 1024);
+    // Own a durable path for diagnostics: directory walks free `child` after this returns.
+    const path_owned = try gpa.dupe(u8, path);
+    errdefer gpa.free(path_owned);
+    try result.owned_paths.append(gpa, path_owned);
+
+    const source = try compat.readFileAlloc(io, gpa, path_owned, 8 * 1024 * 1024);
     defer gpa.free(source);
-    try alloc_undischarged.analyzeSource(path, source, out, gpa);
-    try file_undischarged.analyzeSource(path, source, out, gpa);
-    try ptrcast_unremarked.analyzeSource(path, source, out, gpa);
-    try volatile_std.analyzeSource(path, source, out, gpa, options.prefer_compat);
-    try empty_defer.analyzeSource(path, source, out, gpa);
-    try hidden_allocator.analyzeSource(path, source, out, gpa);
-    try swallow_error.analyzeSource(path, source, out, gpa);
+    const out = &result.diagnostics;
+    try alloc_undischarged.analyzeSource(path_owned, source, out, gpa);
+    try file_undischarged.analyzeSource(path_owned, source, out, gpa);
+    try ptrcast_unremarked.analyzeSource(path_owned, source, out, gpa);
+    try volatile_std.analyzeSource(path_owned, source, out, gpa, options.prefer_compat);
+    try empty_defer.analyzeSource(path_owned, source, out, gpa);
+    try hidden_allocator.analyzeSource(path_owned, source, out, gpa);
+    try swallow_error.analyzeSource(path_owned, source, out, gpa);
     // FFI-shaped files use the ffi.* rule id so explain/repairs talk about C cleanup.
     if (init_without_deinit.sourceLooksFfi(source)) {
-        try init_without_deinit.analyzeFfiShaped(path, source, out, gpa);
+        try init_without_deinit.analyzeFfiShaped(path_owned, source, out, gpa);
     } else {
-        try init_without_deinit.analyzeSource(path, source, out, gpa);
+        try init_without_deinit.analyzeSource(path_owned, source, out, gpa);
     }
-    try sentinel_type_loss.analyzeSource(path, source, out, gpa);
+    try sentinel_type_loss.analyzeSource(path_owned, source, out, gpa);
     suppress.filterSuppressed(source, out);
 }
 
@@ -128,6 +141,33 @@ pub fn writeReport(writer: *std.Io.Writer, diags: []const diagnostic.Diagnostic)
 pub fn preferCompatMarker(io: compat.Io) bool {
     compat.access(io, ".myzig/prefer_compat") catch return false;
     return true;
+}
+
+test "directory check keeps durable paths after child frees" {
+    const io = std.testing.io;
+    const gpa = std.testing.allocator;
+    const dir = ".zig-cache/myzig-check-path-own";
+    const file_path = dir ++ "/poison.zig";
+    try compat.createDirPath(io, dir);
+    defer std.Io.Dir.cwd().deleteTree(io, dir) catch {};
+    try compat.writeFile(io, file_path,
+        \\pub fn f() void {
+        \\    _ = error.X catch {};
+        \\}
+        \\
+    );
+
+    var result = try checkPath(io, gpa, dir);
+    defer result.deinit(gpa);
+    try std.testing.expect(result.diagnostics.items.len >= 1);
+    const p = result.diagnostics.items[0].location.path;
+    try std.testing.expect(std.mem.indexOf(u8, p, "poison.zig") != null);
+    // GPA poison byte must not dominate the path string.
+    var aa: usize = 0;
+    for (p) |c| {
+        if (c == 0xaa) aa += 1;
+    }
+    try std.testing.expect(aa * 2 < p.len);
 }
 
 test {

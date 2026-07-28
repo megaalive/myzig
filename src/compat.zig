@@ -26,6 +26,7 @@ pub const EnvError = adapter.EnvError;
 pub const AccessError = adapter.AccessError;
 pub const CopyError = adapter.CopyError;
 pub const DeleteError = adapter.DeleteError;
+pub const RenameError = adapter.RenameError;
 
 /// Read an entire file (cwd-relative or absolute per Zig path rules).
 /// Caller owns the returned slice.
@@ -67,6 +68,11 @@ pub fn copyFile(io: Io, source_path: []const u8, dest_path: []const u8) CopyErro
 /// Delete a file (not a directory).
 pub fn deleteFile(io: Io, path: []const u8) DeleteError!void {
     return adapter.deleteFile(io, path);
+}
+
+/// Rename/move a file within the process cwd.
+pub fn renameFile(io: Io, old_path: []const u8, new_path: []const u8) RenameError!void {
+    return adapter.renameFile(io, old_path, new_path);
 }
 
 /// Read one environment variable. Caller owns the returned slice.

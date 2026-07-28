@@ -106,7 +106,12 @@ fn checkFile(
     try empty_defer.analyzeSource(path, source, out, gpa);
     try hidden_allocator.analyzeSource(path, source, out, gpa);
     try swallow_error.analyzeSource(path, source, out, gpa);
-    try init_without_deinit.analyzeSource(path, source, out, gpa);
+    // FFI-shaped files use the ffi.* rule id so explain/repairs talk about C cleanup.
+    if (init_without_deinit.sourceLooksFfi(source)) {
+        try init_without_deinit.analyzeFfiShaped(path, source, out, gpa);
+    } else {
+        try init_without_deinit.analyzeSource(path, source, out, gpa);
+    }
     suppress.filterSuppressed(source, out);
 }
 

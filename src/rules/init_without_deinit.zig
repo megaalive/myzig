@@ -12,6 +12,32 @@ pub fn analyzeSource(
     out: *std.ArrayList(diagnostic.Diagnostic),
     gpa: std.mem.Allocator,
 ) !void {
+    try analyzeWithRule(path, source, out, gpa, schema.seed_init_without_deinit);
+}
+
+/// Same detector under `ffi.wrapper-init-without-deinit` when the file looks FFI-shaped.
+pub fn analyzeFfiShaped(
+    path: []const u8,
+    source: []const u8,
+    out: *std.ArrayList(diagnostic.Diagnostic),
+    gpa: std.mem.Allocator,
+) !void {
+    if (!sourceLooksFfi(source)) return;
+    try analyzeWithRule(path, source, out, gpa, schema.seed_ffi_wrapper_init_without_deinit);
+}
+
+pub fn sourceLooksFfi(source: []const u8) bool {
+    return std.mem.indexOf(u8, source, "@cImport") != null or
+        std.mem.indexOf(u8, source, "c.") != null;
+}
+
+fn analyzeWithRule(
+    path: []const u8,
+    source: []const u8,
+    out: *std.ArrayList(diagnostic.Diagnostic),
+    gpa: std.mem.Allocator,
+    rule: schema.Rule,
+) !void {
     var funcs = try scan.findFunctions(gpa, source);
     defer scan.freeFunctions(gpa, &funcs);
 
@@ -34,7 +60,7 @@ pub fn analyzeSource(
                 continue;
             }
             try out.append(gpa, diagnostic.Diagnostic.fromRule(
-                schema.seed_init_without_deinit,
+                rule,
                 .convention,
                 .{
                     .path = path,
@@ -203,6 +229,40 @@ test "init without deinit flagged; defer deinit and return transfer are not" {
     defer fail_diags.deinit(gpa);
     try analyzeSource("fail.zig", fail_src, &fail_diags, gpa);
     try std.testing.expect(fail_diags.items.len >= 1);
+
+    const ffi_fail_src =
+        \\const c = struct { pub fn open() ?*anyopaque { return null; } };
+        \\const Db = struct {
+        \\    handle: ?*anyopaque,
+        \\    pub fn init() !Db { return .{ .handle = c.open() }; }
+        \\};
+        \\pub fn bad() !void {
+        \\    var db = try Db.init();
+        \\    _ = db;
+        \\}
+    ;
+    var ffi_fail_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer ffi_fail_diags.deinit(gpa);
+    try analyzeFfiShaped("ffi_fail.zig", ffi_fail_src, &ffi_fail_diags, gpa);
+    try std.testing.expect(ffi_fail_diags.items.len >= 1);
+    try std.testing.expectEqualStrings("ffi.wrapper-init-without-deinit", ffi_fail_diags.items[0].rule_id);
+
+    const ffi_pass_src =
+        \\const c = struct { pub fn close(_: ?*anyopaque) void {} };
+        \\const Db = struct {
+        \\    handle: ?*anyopaque = null,
+        \\    pub fn init() !Db { return .{}; }
+        \\    pub fn deinit(self: *Db) void { c.close(self.handle); }
+        \\};
+        \\pub fn ok() !void {
+        \\    var db = try Db.init();
+        \\    defer db.deinit();
+        \\}
+    ;
+    var ffi_pass_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer ffi_pass_diags.deinit(gpa);
+    try analyzeFfiShaped("ffi_pass.zig", ffi_pass_src, &ffi_pass_diags, gpa);
+    try std.testing.expect(ffi_pass_diags.items.len == 0);
 
     var pass_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
     defer pass_diags.deinit(gpa);

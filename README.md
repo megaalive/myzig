@@ -18,7 +18,10 @@ Requires a recent Zig 0.17 development toolchain.
 zig build
 zig build test
 zig build run -- --help
+powershell -File scripts/ci.ps1    # local CI parity (fmt + build + test + CLI smoke)
 ```
+
+When GitHub Actions is blocked (private-repo billing / spending limit), use `powershell -File scripts/ci.ps1` — same smoke as `.github/workflows/ci.yml`.
 
 ## Library highlights
 

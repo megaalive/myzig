@@ -45,6 +45,9 @@ pub fn writeContract(writer: *std.Io.Writer, version: []const u8) std.Io.Writer.
         \\- Legacy accept: `myzig adopt` → edit `.myzig/policy.md` → `myzig baseline`
         \\- CI gate: `myzig check --ratchet <path>`
         \\- Std insulation: `.myzig/prefer_compat` or `--prefer-compat`
+        \\- Local CI when Actions billing blocks: `powershell -File scripts/ci.ps1`
+        \\- Transfer tips: two-step field store / put / `takeOwnership*` / same-file callee free (`F-OWN-065`)
+        \\- FFI wrappers: `ffi.wrapper-init-without-deinit` on `c.` files (`F-OWN-066`)
         \\
     );
 }
@@ -79,9 +82,11 @@ pub fn writeFullBriefing(
     }
 }
 
-test "contract mentions loop" {
-    var buf: [2048]u8 = undefined;
+test "contract mentions loop and transfer/FFI tips" {
+    var buf: [4096]u8 = undefined;
     var w = std.Io.Writer.fixed(&buf);
     try writeContract(&w, "0.0.0");
     try std.testing.expect(std.mem.indexOf(u8, buf[0..w.end], "Self-correction loop") != null);
+    try std.testing.expect(std.mem.indexOf(u8, buf[0..w.end], "F-OWN-065") != null);
+    try std.testing.expect(std.mem.indexOf(u8, buf[0..w.end], "F-OWN-066") != null);
 }

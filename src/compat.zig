@@ -62,6 +62,14 @@ pub fn envGet(gpa: std.mem.Allocator, name: []const u8) EnvError![]u8 {
     return adapter.envGet(gpa, name);
 }
 
+/// Like `envGet`, but returns `null` when unset (no error). Caller owns a non-null slice.
+pub fn envGetOrNull(gpa: std.mem.Allocator, name: []const u8) EnvError!?[]u8 {
+    return adapter.envGet(gpa, name) catch |err| switch (err) {
+        error.EnvironmentVariableNotFound => null,
+        else => err,
+    };
+}
+
 /// Absolute path of the process cwd. Caller owns the returned slice.
 pub fn currentPathAlloc(io: Io, gpa: std.mem.Allocator) PathError![]u8 {
     return adapter.currentPathAlloc(io, gpa);

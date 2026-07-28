@@ -56,9 +56,14 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **promote-to-code-when:** a reusable `myzig` packaging/release story exists
 - **incident:** none yet (zrig vendor pattern)
 
-### F-HARNESS-002 · Private Actions jobs fail with empty steps
+### F-STD-003 · Prefer envGetOrNull when absence is normal
+- **symptom:** repeated `envGet` + `catch EnvironmentVariableNotFound => null` in tools
+- **do:** `myzig.compat.envGetOrNull(gpa, key)` when missing is an expected case
+- **don't:** Re-learn std env APIs in every dogfood tool
+- **promote-to-code-when:** already promoted → `compat.envGetOrNull`
+- **incident:** ZRIG-DOGFOOD-002
 - **symptom:** All matrix jobs fail in ~10s with 0 steps / no runner; annotation mentions spending limit or failed payments
-- **do:** Fix GitHub Billing & plans (payment method / spending limit). Prefer ubuntu-only CI on private repos; macos is billed 10× — use `workflow_dispatch` full_matrix when needed
+- **do:** Fix GitHub Billing & plans (payment method / spending limit). Prefer ubuntu-only CI on private repos; macos is billed 10× — use `workflow_dispatch` full_matrix when needed. While Actions is blocked, run local parity: `powershell -File scripts/ci.ps1` (or `pwsh` if available)
 - **don't:** Treat empty-step failures as Zig compile errors
 - **promote-to-code-when:** process / workflow only
 - **incident:** AGENT-CI-001
@@ -204,11 +209,11 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **incident:** EXT-STUDY-011
 
 ### F-OWN-016 · FFI cleanup is a separate contract
-- **symptom:** Zig leak checks clean while C/OS/GPU resources still leak
-- **do:** Document who frees across the FFI boundary; consider Valgrind-class tools
+- **symptom:** Zig leak checks clean while C/OS/GPU resources still leak; wrapper `init` without `deinit`
+- **do:** Document who frees across the FFI boundary; prefer `defer wrapper.deinit()` that calls C close/finalize; consider Valgrind-class tools
 - **don't:** Treat GPA leak detection as whole-program proof
-- **promote-to-code-when:** future `ffi.*` rules if incidents repeat
-- **incident:** EXT-STUDY-013
+- **promote-to-code-when:** already promoted → `ffi.wrapper-init-without-deinit` on FFI-shaped files
+- **incident:** EXT-STUDY-013 / MYZIG-OWN-005
 
 ### F-OWN-017 · Completions need stable storage
 - **symptom:** stack completion reused/moved while async work is outstanding
@@ -235,8 +240,8 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **symptom:** calling raw C `close`/`finalize` at every exit while also using a Zig wrapper type
 - **do:** Own the C handle behind `Wrapper.deinit` / statement-like `deinit`
 - **don't:** Rely on GPA leak checks to prove C cleanup
-- **promote-to-code-when:** future `ffi.*` if incidents repeat
-- **incident:** EXT-STUDY-018
+- **promote-to-code-when:** already promoted → `ffi.wrapper-init-without-deinit`
+- **incident:** EXT-STUDY-018 / MYZIG-OWN-005
 
 ### F-OWN-021 · Freestanding heaps are explicit regions
 - **symptom:** hidden `page_allocator` on freestanding / embedded targets
@@ -567,3 +572,10 @@ elease already helps
 - **don't:** Expect arbitrary `foo(buf)` or other-file callees to discharge the acquire
 - **promote-to-code-when:** already promoted → handoff needles + same-file callee free
 - **incident:** MYZIG-OWN-004
+
+### F-OWN-066 · FFI wrappers pair init with deinit that closes C
+- **symptom:** `var db = try Db.init()` in a `c.` / `@cImport` file without `defer db.deinit()`
+- **do:** Own the Zig wrapper; call C `close`/`finalize` inside `deinit`; use `myzig explain` FFI repair intents
+- **don't:** Scatter bare C cleanup at every call site without a wrapper boundary
+- **promote-to-code-when:** already promoted → `ffi.wrapper-init-without-deinit`
+- **incident:** MYZIG-OWN-005

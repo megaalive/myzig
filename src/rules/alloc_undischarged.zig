@@ -337,10 +337,13 @@ fn isDischargeCalleeName(name: []const u8) bool {
 
 fn isCollectionOrHandoffCallee(name: []const u8) bool {
     const words = [_][]const u8{
-        "append",             "appendSlice",
-        "put",                "putNoClobber", "putAssumeCapacity", "insert",
-        "takeOwnership",      "assumeOwnership", "adoptOwnership",
-        "intoOwned",          "stealOwnership", "consumeOwned", "takeOwned",
+        "append",            "appendSlice",
+        "put",               "putNoClobber",
+        "putAssumeCapacity", "insert",
+        "takeOwnership",     "assumeOwnership",
+        "adoptOwnership",    "intoOwned",
+        "stealOwnership",    "consumeOwned",
+        "takeOwned",
     };
     for (words) |w| {
         if (std.mem.eql(u8, name, w)) return true;

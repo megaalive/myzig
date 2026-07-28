@@ -18,6 +18,7 @@ Rules (and compat/contract improvements) are born from incidents.
 | `MYZIG-OWN-002` | Explicit free without defer |
 | `MYZIG-OWN-003` | Two-step field store + collection put/insert transfers |
 | `MYZIG-OWN-004` | Named takeOwnership handoff + same-file callee free |
+| `MYZIG-OWN-005` | FFI wrapper init without deinit (C handle) |
 | `AZIG-OWN-001` | Arena + coarse defer discharge limits |
 | `AZIG-OWN-002` | Out-param / one-hop rename transfers |
 | `AZIG-OWN-003` | `allocPrint` / related acquires were invisible |
@@ -90,6 +91,7 @@ Rules (and compat/contract improvements) are born from incidents.
 | `EXT-STUDY-062` | Cadangan / optional names are part of the set |
 | `EXT-STUDY-063` | C-runtime HTTP façades + request arenas |
 | `ZRIG-DOGFOOD-001` | Clean prefer-compat ratchet baseline |
+| `ZRIG-DOGFOOD-002` | `envGetOrNull` for optional env vars |
 | `AGENT-STD-001` / `002` | std churn → compat + volatile rule |
 | `AGENT-CLI-001` / `002` | Clean exits; exhaustive CLI / witness hash |
 | `AGENT-STUDY-001` | Finish named external-study shortlists |

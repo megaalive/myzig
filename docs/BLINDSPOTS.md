@@ -29,7 +29,7 @@ myzig's early detectors are **local heuristics**, not whole-program proof.
 | General lint | Naming, unused, braces, build-step AST hosts — out of product scope (`EXT-STUDY-006`) |
 | `.create(` | Single-arg only (`allocator.create(T)`); multi-arg methods skipped (`EXT-STUDY-009`) |
 | Arena acquires | Token heuristic (`arena` / `arena_allocator` / `scratch_allocator` / `scratch.`); does not prove arena/scratch reset |
-| FFI / C boundaries | Zig allocator tracking does not prove external cleanup (`EXT-STUDY-013`) |
+| FFI / C boundaries | Zig allocator tracking does not prove external cleanup; FFI-shaped init uses `ffi.wrapper-init-without-deinit` (`EXT-STUDY-013`, `MYZIG-OWN-005`) |
 | Async completions | Outstanding submissions after deinit not modeled (`EXT-STUDY-014`) |
 | Phase allocators | Optional helper only; sealed-phase misuse is assert-time, not a check rule |
 | Language semantics | Prefer std/compiler truth over folk patterns (`EXT-STUDY-015`) |

@@ -35,6 +35,7 @@ Also see `docs/BLINDSPOTS.md` (analyzer detail) and `docs/friction-playbook.md`.
 | `ownership.hidden-allocator` | convention | FN: aliased globals / non-needle heaps; skips `test` |
 | `lifecycle.swallow-error` | convention | Comment-only catch allowed; FN: non-block catch shapes |
 | `lifecycle.init-without-deinit` | convention | Only `try …init(`; FP: examples inside string literals; FN: infallible init |
+| `ffi.wrapper-init-without-deinit` | convention | Same heuristic on `@cImport`/`c.` files; does not prove C close correctness |
 
 ## Tuned FP / FN guards
 

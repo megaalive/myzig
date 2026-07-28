@@ -6,7 +6,7 @@
 const std = @import("std");
 
 /// Bumped when seed rule set identity changes in a receipt-relevant way.
-pub const ruleset_revision: []const u8 = "0.0.0-seed18";
+pub const ruleset_revision: []const u8 = "0.0.0-seed19";
 
 pub const Certainty = enum {
     /// Expensive; only when local facts suffice. Heuristic AST rules must not use this as ceiling.
@@ -517,6 +517,42 @@ pub const seed_init_without_deinit: Rule = .{
     },
 };
 
+pub const seed_ffi_wrapper_init_without_deinit: Rule = .{
+    .id = "ffi.wrapper-init-without-deinit",
+    .category = .ffi,
+    .default_severity = .note,
+    .certainty_ceiling = .convention,
+    .obligation = .external_ownership_must_be_documented,
+    .detector = .local_ast,
+    .discharges = &.{.other},
+    .message = "FFI-shaped init without matching deinit/close that should release the C handle",
+    .explanation =
+    \\When a file uses `@cImport` / `c.` symbols, `.init(` bindings usually wrap an
+    \\external handle. Pair with `defer name.deinit()` (or `.close`) whose body calls
+    \\the C cleanup (`close`/`finalize`/…). GPA leak checks will not see the C resource.
+    \\Same local heuristic as `lifecycle.init-without-deinit`, tagged for FFI explain.
+    ,
+    .repairs = &.{
+        .{
+            .tier = .canonical,
+            .intent = "local_lifetime",
+            .summary = "Add `defer name.deinit()` and call the C close/finalize inside `deinit`.",
+        },
+        .{
+            .tier = .suggestion,
+            .intent = "document_external_ownership",
+            .summary = "If a callee owns the handle, document the transfer; do not leave init unpaired.",
+        },
+    },
+    .references = &.{
+        "fixtures/fail/ffi_wrapper_init_without_deinit.zig",
+        "fixtures/pass/ffi_wrapper_deinit_closes.zig",
+        "research/incidents/EXT-STUDY-013.md",
+        "research/incidents/EXT-STUDY-018.md",
+        "research/incidents/MYZIG-OWN-005.md",
+    },
+};
+
 pub const seed_rules: []const Rule = &.{
     seed_alloc_undischarged,
     seed_file_undischarged,
@@ -527,6 +563,7 @@ pub const seed_rules: []const Rule = &.{
     seed_hidden_allocator,
     seed_swallow_error,
     seed_init_without_deinit,
+    seed_ffi_wrapper_init_without_deinit,
 };
 
 test "certainty ceiling clamps proven down to likely" {

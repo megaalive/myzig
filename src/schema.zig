@@ -6,7 +6,7 @@
 const std = @import("std");
 
 /// Bumped when seed rule set identity changes in a receipt-relevant way.
-pub const ruleset_revision: []const u8 = "0.0.0-seed5";
+pub const ruleset_revision: []const u8 = "0.0.0-seed7";
 
 pub const Certainty = enum {
     /// Expensive; only when local facts suffice. Heuristic AST rules must not use this as ceiling.
@@ -225,6 +225,7 @@ pub const seed_alloc_undischarged: Rule = .{
         "fixtures/pass/alloc_print_return.zig",
         "fixtures/pass/alloc_return_chain.zig",
         "fixtures/pass/alloc_append_transfer.zig",
+        "fixtures/pass/alloc_append_multiline.zig",
         "fixtures/pass/alloc_struct_return.zig",
         "fixtures/pass/alloc_retarget.zig",
         "fixtures/fail/alloc_print_undischarged.zig",
@@ -236,6 +237,7 @@ pub const seed_alloc_undischarged: Rule = .{
         "research/incidents/AZIG-OWN-004.md",
         "research/incidents/AZIG-OWN-006.md",
         "research/incidents/AZIG-OWN-007.md",
+        "research/incidents/EXT-STUDY-002.md",
     },
 };
 
@@ -343,11 +345,123 @@ pub const seed_volatile_std: Rule = .{
     },
 };
 
+pub const seed_empty_defer: Rule = .{
+    .id = "lifecycle.empty-defer",
+    .category = .lifetime,
+    .default_severity = .note,
+    .certainty_ceiling = .convention,
+    .obligation = .other,
+    .detector = .local_ast,
+    .discharges = &.{.other},
+    .message = "empty defer block does no cleanup",
+    .explanation =
+    \\An empty `defer {}` (or comment-only body) looks like cleanup but discharges
+    \\nothing. Agents often leave `defer {}` as a stub. This is a convention signal
+    \\— not a proof of a leak.
+    ,
+    .repairs = &.{
+        .{
+            .tier = .canonical,
+            .intent = "local_lifetime",
+            .summary = "Put the real cleanup in the defer body, or delete the empty defer.",
+        },
+    },
+    .references = &.{
+        "fixtures/fail/empty_defer.zig",
+        "fixtures/pass/alloc_defer_free.zig",
+        "research/incidents/EXT-STUDY-001.md",
+    },
+};
+
+pub const seed_empty_errdefer: Rule = .{
+    .id = "lifecycle.empty-errdefer",
+    .category = .lifetime,
+    .default_severity = .note,
+    .certainty_ceiling = .convention,
+    .obligation = .other,
+    .detector = .local_ast,
+    .discharges = &.{.other},
+    .message = "empty errdefer block does no error-path cleanup",
+    .explanation =
+    \\An empty `errdefer {}` suggests error-only cleanup without performing it.
+    \\Convention signal (empty-defer sibling on the error path); certainty stays `convention`.
+    ,
+    .repairs = &.{
+        .{
+            .tier = .canonical,
+            .intent = "error_only_cleanup",
+            .summary = "Put error-path free/close in the errdefer body, or remove the stub.",
+        },
+    },
+    .references = &.{
+        "fixtures/fail/empty_errdefer.zig",
+        "research/incidents/EXT-STUDY-001.md",
+    },
+};
+
+pub const seed_hidden_allocator: Rule = .{
+    .id = "ownership.hidden-allocator",
+    .category = .allocator,
+    .default_severity = .note,
+    .certainty_ceiling = .convention,
+    .obligation = .other,
+    .detector = .local_ast,
+    .discharges = &.{.other},
+    .message = "hidden global allocator use; prefer a caller-supplied allocator",
+    .explanation =
+    \\Using `page_allocator` / `c_allocator` inside a helper hides allocation policy
+    \\from the caller. Prefer an explicit `allocator` parameter. Skips `test { ... }`
+    \\blocks. Convention only.
+    ,
+    .repairs = &.{
+        .{
+            .tier = .canonical,
+            .intent = "local_lifetime",
+            .summary = "Thread `allocator: Allocator` from the caller instead of a global heap.",
+        },
+    },
+    .references = &.{
+        "fixtures/fail/hidden_allocator.zig",
+        "fixtures/pass/alloc_defer_free.zig",
+        "research/incidents/EXT-STUDY-004.md",
+    },
+};
+
+pub const seed_swallow_error: Rule = .{
+    .id = "lifecycle.swallow-error",
+    .category = .lifetime,
+    .default_severity = .note,
+    .certainty_ceiling = .convention,
+    .obligation = .other,
+    .detector = .local_ast,
+    .discharges = &.{.other},
+    .message = "error is swallowed without handling",
+    .explanation =
+    \\Empty `catch {}` or `catch unreachable` can hide ownership cleanup failures.
+    \\Comment-only catch bodies are allowed (documented ignore).
+    ,
+    .repairs = &.{
+        .{
+            .tier = .canonical,
+            .intent = "document_unsafe",
+            .summary = "Handle, log, or document the ignore with a comment inside the catch body.",
+        },
+    },
+    .references = &.{
+        "fixtures/fail/swallow_error.zig",
+        "research/incidents/EXT-STUDY-005.md",
+    },
+};
+
 pub const seed_rules: []const Rule = &.{
     seed_alloc_undischarged,
     seed_file_undischarged,
     seed_ptrcast_unremarked,
     seed_volatile_std,
+    seed_empty_defer,
+    seed_empty_errdefer,
+    seed_hidden_allocator,
+    seed_swallow_error,
 };
 
 test "certainty ceiling clamps proven down to likely" {

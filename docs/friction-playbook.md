@@ -125,3 +125,31 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **don't:** Add local `defer free` on a field that was returned to the caller
 - **promote-to-code-when:** already promoted → returned-struct acquire span (`AZIG-OWN-006`)
 - **incident:** AZIG-OWN-006
+
+### F-OWN-006 · Empty defer is not cleanup
+- **symptom:** `defer {}` left as a stub; agents think ownership is handled
+- **do:** Put real free/close in the body, or delete the stub (`myzig` flags empty defer/errdefer)
+- **don't:** Use comment-only defer bodies as “documentation of intent”
+- **promote-to-code-when:** already promoted → `lifecycle.empty-defer` / `empty-errdefer`
+- **incident:** EXT-STUDY-001
+
+### F-OWN-007 · Prefer caller-supplied allocators
+- **symptom:** helper uses `std.heap.page_allocator` / `c_allocator` so callers cannot choose arena/GPA
+- **do:** Take `allocator: Allocator` (or anytype) as a parameter; skip globals outside tests
+- **don't:** Hide heap policy inside library helpers
+- **promote-to-code-when:** already promoted → `ownership.hidden-allocator`
+- **incident:** EXT-STUDY-004
+
+### F-OWN-008 · Do not swallow ownership-path errors
+- **symptom:** `catch {}` / `catch unreachable` hides cleanup failures
+- **do:** Handle, log, or document ignore with a comment inside the catch body
+- **don't:** Leave empty catch on alloc/free/close paths
+- **promote-to-code-when:** already promoted → `lifecycle.swallow-error`
+- **incident:** EXT-STUDY-005
+
+### F-OWN-009 · Suppress with intent, not silence
+- **symptom:** need a one-off exception without disabling the rule project-wide
+- **do:** `// myzig-disable-next-line rule.id - rationale` (or `myzig-disable-current-line`)
+- **don't:** Broad-disable without a reason; do not expect multi-line region disables yet
+- **promote-to-code-when:** already promoted → `suppress.zig`
+- **incident:** EXT-STUDY-005

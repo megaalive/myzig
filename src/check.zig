@@ -7,6 +7,10 @@ const alloc_undischarged = @import("rules/alloc_undischarged.zig");
 const file_undischarged = @import("rules/file_undischarged.zig");
 const ptrcast_unremarked = @import("rules/ptrcast_unremarked.zig");
 const volatile_std = @import("rules/volatile_std.zig");
+const empty_defer = @import("rules/empty_defer.zig");
+const hidden_allocator = @import("rules/hidden_allocator.zig");
+const swallow_error = @import("rules/swallow_error.zig");
+const suppress = @import("suppress.zig");
 
 pub const Options = struct {
     /// When true, emit `compat.volatile-std` findings. Off by default so
@@ -98,6 +102,10 @@ fn checkFile(
     try file_undischarged.analyzeSource(path, source, out, gpa);
     try ptrcast_unremarked.analyzeSource(path, source, out, gpa);
     try volatile_std.analyzeSource(path, source, out, gpa, options.prefer_compat);
+    try empty_defer.analyzeSource(path, source, out, gpa);
+    try hidden_allocator.analyzeSource(path, source, out, gpa);
+    try swallow_error.analyzeSource(path, source, out, gpa);
+    suppress.filterSuppressed(source, out);
 }
 
 pub fn writeReport(writer: *std.Io.Writer, diags: []const diagnostic.Diagnostic) std.Io.Writer.Error!void {
@@ -118,4 +126,8 @@ test {
     _ = file_undischarged;
     _ = ptrcast_unremarked;
     _ = volatile_std;
+    _ = empty_defer;
+    _ = hidden_allocator;
+    _ = swallow_error;
+    _ = suppress;
 }

@@ -146,3 +146,18 @@ pub fn matchingBrace(source: []const u8, open: usize) ?usize {
     }
     return null;
 }
+
+pub fn matchingParen(source: []const u8, open: usize) ?usize {
+    if (open >= source.len or source[open] != '(') return null;
+    var depth: i32 = 0;
+    var i = open;
+    while (i < source.len) : (i += 1) {
+        const c = source[i];
+        if (c == '(') depth += 1;
+        if (c == ')') {
+            depth -= 1;
+            if (depth == 0) return i;
+        }
+    }
+    return null;
+}

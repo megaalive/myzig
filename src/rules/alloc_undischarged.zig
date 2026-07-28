@@ -157,6 +157,46 @@ fn bodyTransfersBinding(body: []const u8, name: []const u8) bool {
         if (bodyReturnsBinding(body, id)) return true;
         if (bodyAssignsBindingToOutParam(body, id)) return true;
         if (bindingUsedInReturnedStructField(body, id)) return true;
+        if (bindingConsumedByCollectionCall(body, id)) return true;
+    }
+    return false;
+}
+
+fn bindingConsumedByCollectionCall(body: []const u8, name: []const u8) bool {
+    // Multi-line: `const data = try dupe; try list.append(..., .{ .data = data });`
+    const markers = [_][]const u8{ ".append(", ".appendSlice(" };
+    for (markers) |marker| {
+        var from: usize = 0;
+        while (from < body.len) {
+            const idx = std.mem.indexOfPos(u8, body, from, marker) orelse break;
+            const open = idx + marker.len - 1; // '('
+            const close = scan.matchingParen(body, open) orelse {
+                from = idx + 1;
+                continue;
+            };
+            const args = body[open + 1 .. close];
+            if (identAppearsInSpan(args, name)) return true;
+            from = close + 1;
+        }
+    }
+    return false;
+}
+
+fn identAppearsInSpan(span: []const u8, name: []const u8) bool {
+    var i: usize = 0;
+    while (i < span.len) : (i += 1) {
+        if (!std.mem.startsWith(u8, span[i..], name)) continue;
+        if (i > 0) {
+            const prev = span[i - 1];
+            if (std.ascii.isAlphanumeric(prev) or prev == '_') continue;
+        }
+        const end = i + name.len;
+        if (end < span.len) {
+            const next = span[end];
+            if (next == '.' or next == '[') continue;
+            if (std.ascii.isAlphanumeric(next) or next == '_') continue;
+        }
+        return true;
     }
     return false;
 }
@@ -540,6 +580,12 @@ test "leaky local alloc is flagged; defer free and return-transfer are not" {
         \\    };
         \\}
     ;
+    const append_multiline_src =
+        \\pub fn addItem(allocator: anytype, list: anytype, src: []const u8) !void {
+        \\    const data = try allocator.dupe(u8, src);
+        \\    try list.append(allocator, .{ .data = data });
+        \\}
+    ;
     const retarget_src =
         \\pub fn trimCopy(allocator: anytype, teks: []const u8) ![]u8 {
         \\    var out = try allocator.dupe(u8, teks);
@@ -629,6 +675,11 @@ test "leaky local alloc is flagged; defer free and return-transfer are not" {
     defer struct_bind_diags.deinit(gpa);
     try analyzeSource("struct_bind.zig", struct_binding_src, &struct_bind_diags, gpa);
     try std.testing.expect(struct_bind_diags.items.len == 0);
+
+    var append_multi_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer append_multi_diags.deinit(gpa);
+    try analyzeSource("append_multi.zig", append_multiline_src, &append_multi_diags, gpa);
+    try std.testing.expect(append_multi_diags.items.len == 0);
 
     var retarget_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
     defer retarget_diags.deinit(gpa);

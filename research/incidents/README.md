@@ -1,4 +1,4 @@
-﻿# Incident lab
+# Incident lab
 
 Rules (and compat/contract improvements) are born from incidents.
 
@@ -26,11 +26,11 @@ Rules (and compat/contract improvements) are born from incidents.
 | `AZIG-OWN-005` | Adjacent-line ptrcast permits |
 | `AZIG-OWN-006` | `return .{ .field = try dupe }` struct transfer |
 | `AZIG-OWN-007` | Assignment retarget `out = next; return out` |
-| `AZIG-OWN-008` | Azig memory-clean; remaining ptrcast remarks are product hygiene |
-| `EXT-STUDY-001` | Empty defer/errdefer stubs → lifecycle rules |
+| `AZIG-OWN-008` | Azig ptrcast hygiene annotated (`myzig.permit(ffi)`) |
+| `EXT-STUDY-001` | Empty defer/errdefer stubs ? lifecycle rules |
 | `EXT-STUDY-002` | Multi-line append ownership transfer |
 | `EXT-STUDY-003` | Study boundary: CFG/ZIR/sentinel not cloned |
-| `EXT-STUDY-004` | Hidden page/c allocator → `ownership.hidden-allocator` |
+| `EXT-STUDY-004` | Hidden page/c allocator ? `ownership.hidden-allocator` |
 | `EXT-STUDY-005` | Swallow error + `myzig-disable-*` suppressions |
 | `EXT-STUDY-006` | Study boundary: general lint / build-step hosts not cloned |
 | `EXT-STUDY-007` | Field-store ownership transfer |
@@ -55,16 +55,16 @@ Rules (and compat/contract improvements) are born from incidents.
 | `EXT-STUDY-026` | Staging unload + graphics context order |
 | `EXT-STUDY-027` | begin/end mode scopes |
 | `EXT-STUDY-028` | Post-Zig runtime = allocator-shape reference only |
-| `EXT-STUDY-029` | Borrowed arena ptr + null→global fallback |
+| `EXT-STUDY-029` | Borrowed arena ptr + null?global fallback |
 | `EXT-STUDY-030` | Single-buffer scratch + nullable allocator |
 | `EXT-STUDY-031` | setup/shutdown + two-phase GPU destroy/dealloc |
 | `EXT-STUDY-032` | Handle pools; releaseResource; drain GPU first |
 | `EXT-STUDY-033` | WebGPU destroy/release/unmap + mid-scope release |
 | `EXT-STUDY-034` | Managed Context vs borrowed Surface |
 | `EXT-STUDY-035` | MemoryPool return + app init/deinit frames |
-| `EXT-STUDY-036` | Binding generators → Destroy* naming only |
-| `EXT-STUDY-037` | Physical frame allocators ≠ Zig Allocator |
-| `EXT-STUDY-038` | Layered PMM → VMM → kernel heap |
+| `EXT-STUDY-036` | Binding generators ? Destroy* naming only |
+| `EXT-STUDY-037` | Physical frame allocators ? Zig Allocator |
+| `EXT-STUDY-038` | Layered PMM ? VMM ? kernel heap |
 | `EXT-STUDY-039` | Boottime FBA sealed before runtime heap |
 | `EXT-STUDY-040` | Bump linker RAM with no free |
 | `EXT-STUDY-041` | Page-table ownership bits / refcount |
@@ -86,13 +86,14 @@ Rules (and compat/contract improvements) are born from incidents.
 | `EXT-STUDY-057` | Type-1 HV page allocator + EPT |
 | `EXT-STUDY-058` | Fuller OS layered reclaim (confirmation) |
 | `EXT-STUDY-059` | Signature decode arenas + HPKE exporters |
-| `EXT-STUDY-060` | Minimal kernels / SBI — no Zig heap |
+| `EXT-STUDY-060` | Minimal kernels / SBI ? no Zig heap |
 | `EXT-STUDY-061` | Clone blockers still require API survey |
 | `EXT-STUDY-062` | Cadangan / optional names are part of the set |
-| `EXT-STUDY-063` | C-runtime HTTP façades + request arenas |
+| `EXT-STUDY-063` | C-runtime HTTP facades + request arenas |
+| `EXT-STUDY-064` | Sentinel type-loss same-line `[]u8` binding |
 | `ZRIG-DOGFOOD-001` | Clean prefer-compat ratchet baseline |
 | `ZRIG-DOGFOOD-002` | `envGetOrNull` for optional env vars |
-| `AGENT-STD-001` / `002` | std churn → compat + volatile rule |
+| `AGENT-STD-001` / `002` | std churn ? compat + volatile rule |
 | `AGENT-CLI-001` / `002` | Clean exits; exhaustive CLI / witness hash |
 | `AGENT-STUDY-001` | Finish named external-study shortlists |
 | `AGENT-STUDY-002` | Cadangan / link-only recommendations are debt |

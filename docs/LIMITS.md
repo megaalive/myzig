@@ -36,6 +36,7 @@ Also see `docs/BLINDSPOTS.md` (analyzer detail) and `docs/friction-playbook.md`.
 | `lifecycle.swallow-error` | convention | Comment-only catch allowed; FN: non-block catch shapes |
 | `lifecycle.init-without-deinit` | convention | Only `try …init(`; FP: examples inside string literals; FN: infallible init |
 | `ffi.wrapper-init-without-deinit` | convention | Same heuristic on `@cImport`/`c.` files; does not prove C close correctness |
+| `memory.sentinel-type-loss` | convention | Same-line `: []u8` / `: []const u8` only; FN: multi-hop / inferred erasure |
 
 ## Tuned FP / FN guards
 

@@ -579,3 +579,10 @@ elease already helps
 - **don't:** Scatter bare C cleanup at every call site without a wrapper boundary
 - **promote-to-code-when:** already promoted → `ffi.wrapper-init-without-deinit`
 - **incident:** MYZIG-OWN-005
+
+### F-OWN-067 · Keep sentinel types from dupeZ/allocSentinel
+- **symptom:** `const plain: []u8 = try allocator.dupeZ(u8, s)` (or `[]const u8`) then `free` mismatches `len+1`
+- **do:** Annotate as `[:0]u8` / matching sentinel type, or free with an explicit `ptr[0..len+1]` if erasure is intentional
+- **don't:** Rely on inferred `[]u8` after a sentinel acquire
+- **promote-to-code-when:** already promoted → `memory.sentinel-type-loss` (same-line only)
+- **incident:** EXT-STUDY-064

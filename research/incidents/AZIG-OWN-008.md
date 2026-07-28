@@ -5,18 +5,27 @@
 After struct-return / retarget / append / allocPrint calibration, `myzig check`
 on azig `src/` reports **0** `memory.alloc-undischarged` findings.
 
-The leftover ~25 hits are all `unsafe.ptrcast-unremarked` on FFI/callback
-opaque casts (`@ptrCast` / `@alignCast`) without an adjacent permit remark.
+Leftover hits were `unsafe.ptrcast-unremarked` on FFI/callback opaque casts
+(`@ptrCast` / `@alignCast`) without an adjacent permit remark.
+
+## Resolution
+
+Annotated remaining sites with adjacent `// myzig.permit(ffi): …` (wildcard
+covers both `ptrcast` and `aligncast` on chained casts). Verify:
+
+```text
+myzig check <azig>/src   # 0 unsafe.ptrcast-unremarked
+```
 
 ## Why it matters
 
 This is **not** a myzig detector FN. The coach already accepts adjacent
-`// myzig.permit(ptrcast): …` / `// safety: …` (`AZIG-OWN-005`). The legacy
-code simply has not annotated those sites yet.
+`// myzig.permit(…)` / `// safety: …` (`AZIG-OWN-005`). The legacy code simply
+had not annotated those sites yet.
 
 ## Candidate action
 
-- Optional: add permits in azig when touching those call sites
+- Keep annotating when new opaque callback casts appear
 - Or `myzig adopt` / baseline if a ratchet gate is desired on the legacy tree
 - Do **not** weaken the ptrcast rule to silence uncommented casts
 

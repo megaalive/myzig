@@ -11,6 +11,7 @@ const empty_defer = @import("rules/empty_defer.zig");
 const hidden_allocator = @import("rules/hidden_allocator.zig");
 const swallow_error = @import("rules/swallow_error.zig");
 const init_without_deinit = @import("rules/init_without_deinit.zig");
+const sentinel_type_loss = @import("rules/sentinel_type_loss.zig");
 const suppress = @import("suppress.zig");
 
 pub const Options = struct {
@@ -112,6 +113,7 @@ fn checkFile(
     } else {
         try init_without_deinit.analyzeSource(path, source, out, gpa);
     }
+    try sentinel_type_loss.analyzeSource(path, source, out, gpa);
     suppress.filterSuppressed(source, out);
 }
 

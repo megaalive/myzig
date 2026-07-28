@@ -6,9 +6,10 @@ myzig focuses on **ownership reasoning and evidence**: obligations, honest certa
 structured repair choices, and auditable receipts — while keeping ordinary Zig
 first-class (no mandatory imports, no dialect, no ReleaseFast tax).
 
-This repository is early scaffolding. Beside the ownership coach, **`myzig.compat`**
-offers a narrow façade over high-churn Zig std surfaces (fs/dir/env/path/time) so
-dogfood apps like zrig do not rewrite call sites on every toolchain bump.
+Beside the ownership coach, **`myzig.compat`** offers a narrow façade over
+high-churn Zig std surfaces (fs/dir/env/path/time) so dogfood apps like zrig do
+not rewrite call sites on every toolchain bump. Current ruleset revision:
+`0.0.0-seed20`.
 
 ## Build
 
@@ -18,20 +19,22 @@ Requires a recent Zig 0.17 development toolchain.
 zig build
 zig build test
 zig build run -- --help
-powershell -File scripts/ci.ps1    # local CI parity (fmt + build + test + CLI smoke)
+powershell -File scripts/ci.ps1    # local/agent CI parity (fmt + build + test + CLI smoke)
 ```
 
-When GitHub Actions is blocked (private-repo billing / spending limit), use `powershell -File scripts/ci.ps1` — same smoke as `.github/workflows/ci.yml`.
+GitHub Actions is the forge gate (ubuntu by default; full OS matrix via
+`workflow_dispatch` → `full_matrix`). Use `powershell -File scripts/ci.ps1` for
+the same smoke offline or in agent loops; it matches `.github/workflows/ci.yml`.
 
 ## Library highlights
 
 ```zig
 const myzig = @import("myzig");
 
-// Coach schemas (M0)
+// Coach schemas
 _ = myzig.schema.seed_alloc_undischarged;
 
-// Std insulation (M0b) — prefer over raw std.Io.Dir / env / time
+// Std insulation — prefer over raw std.Io.Dir / env / time
 const data = try myzig.compat.readFileAlloc(io, gpa, "file.txt", 1024 * 1024);
 defer gpa.free(data);
 ```
@@ -39,7 +42,7 @@ defer gpa.free(data);
 ## CLI
 
 ```text
-myzig check [path] [--ratchet] [--sarif]
+myzig check [path] [--ratchet] [--prefer-compat] [--sarif] [--receipt]
 myzig explain <file:line> [--json|--agent]
 myzig explain --rule <id> [--json|--agent]
 myzig adopt [path]           # editable .myzig/policy.md + baseline if missing

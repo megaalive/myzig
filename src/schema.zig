@@ -6,7 +6,7 @@
 const std = @import("std");
 
 /// Bumped when seed rule set identity changes in a receipt-relevant way.
-pub const ruleset_revision: []const u8 = "0.0.0-seed19";
+pub const ruleset_revision: []const u8 = "0.0.0-seed20";
 
 pub const Certainty = enum {
     /// Expensive; only when local facts suffice. Heuristic AST rules must not use this as ceiling.
@@ -553,6 +553,41 @@ pub const seed_ffi_wrapper_init_without_deinit: Rule = .{
     },
 };
 
+pub const seed_sentinel_type_loss: Rule = .{
+    .id = "memory.sentinel-type-loss",
+    .category = .allocator,
+    .default_severity = .note,
+    .certainty_ceiling = .convention,
+    .obligation = .other,
+    .detector = .local_ast,
+    .discharges = &.{.other},
+    .message = "sentinel allocation stored in a non-sentinel slice type",
+    .explanation =
+    \\`dupeZ` / `allocSentinel` / `dupeSentinel` / `allocPrintSentinel` allocate `len+1`
+    \\bytes. Binding the result as `[]u8` / `[]const u8` drops the sentinel type so a
+    \\later `free` can mismatch. Keep `[:0]u8` (or free with an explicit `len+1` span).
+    \\Same-line annotations only; multi-hop loss stays a documented blind spot.
+    ,
+    .repairs = &.{
+        .{
+            .tier = .canonical,
+            .intent = "local_lifetime",
+            .summary = "Annotate as `[:0]u8` (or matching sentinel type) instead of `[]u8`.",
+        },
+        .{
+            .tier = .suggestion,
+            .intent = "document_unsafe",
+            .summary = "If type erasure is intentional, free with an explicit `ptr[0..len+1]` and remark why.",
+        },
+    },
+    .references = &.{
+        "fixtures/fail/sentinel_type_loss.zig",
+        "fixtures/pass/sentinel_type_kept.zig",
+        "research/incidents/EXT-STUDY-064.md",
+        "research/incidents/EXT-STUDY-003.md",
+    },
+};
+
 pub const seed_rules: []const Rule = &.{
     seed_alloc_undischarged,
     seed_file_undischarged,
@@ -564,6 +599,7 @@ pub const seed_rules: []const Rule = &.{
     seed_swallow_error,
     seed_init_without_deinit,
     seed_ffi_wrapper_init_without_deinit,
+    seed_sentinel_type_loss,
 };
 
 test "certainty ceiling clamps proven down to likely" {

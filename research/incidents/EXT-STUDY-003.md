@@ -20,4 +20,5 @@ Document sentinel/path-sensitive gaps in `docs/LIMITS.md` / `docs/BLINDSPOTS.md`
 ## Optional later
 
 - Convention note for `.dupeZ(` stored into non-sentinel `[]u8` if incidents demand
+  → promoted: `memory.sentinel-type-loss` / `F-OWN-067` / `EXT-STUDY-064` (same-line only)
 - Never claim `proven` for heuristic memory rules

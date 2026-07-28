@@ -55,6 +55,8 @@ if "$BIN" check fixtures/fail/swallow_error.zig; then echo "expected swallow err
 if "$BIN" check fixtures/fail/init_without_deinit.zig; then echo "expected init-without-deinit finding" >&2; exit 1; fi
 if "$BIN" check fixtures/fail/ffi_wrapper_init_without_deinit.zig; then echo "expected ffi wrapper init finding" >&2; exit 1; fi
 "$BIN" check fixtures/pass/ffi_wrapper_deinit_closes.zig
+if "$BIN" check fixtures/fail/sentinel_type_loss.zig; then echo "expected sentinel type-loss finding" >&2; exit 1; fi
+"$BIN" check fixtures/pass/sentinel_type_kept.zig
 if "$BIN" check fixtures/fail/file_undischarged.zig; then echo "expected file finding" >&2; exit 1; fi
 if "$BIN" check fixtures/fail/ptrcast_unremarked.zig; then echo "expected ptrcast finding" >&2; exit 1; fi
 if "$BIN" check --prefer-compat fixtures/fail/volatile_std.zig; then echo "expected volatile-std finding" >&2; exit 1; fi

@@ -16,7 +16,7 @@ myzig's early detectors are **local heuristics**, not whole-program proof.
 | Cross-function | Same-file callee that frees the matching param is transfer (`MYZIG-OWN-004`); other files / packages out of scope |
 | Arenas | Arena-scoped lifetimes are not modeled beyond coarse `defer …deinit` discharge (see `AZIG-OWN-001`) |
 | Double-free / UAF | Not modeled (CFG territory — see `EXT-STUDY-003`) |
-| Sentinel types | `.dupeZ` / allocSentinel acquire tracked; sentinel→`[]u8` type-loss not modeled |
+| Sentinel types | `.dupeZ` / allocSentinel acquire tracked; same-line `[]u8` binding flagged (`memory.sentinel-type-loss`); multi-hop / inferred type-loss still FN |
 | Zig AST/ZIR | Token/text scan, not Zig Ast or ZIR CFG |
 | Certainty | Heuristics emit at most `likely` / `convention` |
 | Compat preference | `compat.volatile-std` is opt-in (`--prefer-compat` / `.myzig/prefer_compat`) |

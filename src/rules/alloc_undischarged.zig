@@ -5,7 +5,15 @@ const schema = @import("../schema.zig");
 const diagnostic = @import("../diagnostic.zig");
 const scan = @import("../scan.zig");
 
-const acquire_needles = [_][]const u8{ ".alloc(", ".create(", ".dupe(" };
+const acquire_needles = [_][]const u8{
+    ".allocPrintZ(",
+    ".allocPrint(",
+    ".alignedAlloc(",
+    ".dupeZ(",
+    ".alloc(",
+    ".create(",
+    ".dupe(",
+};
 const discharge_words = [_][]const u8{ "free", "destroy", "deinit" };
 
 pub fn analyzeSource(
@@ -99,24 +107,20 @@ fn isIdent(name: []const u8) bool {
 }
 
 fn bodyTransfersBinding(body: []const u8, name: []const u8) bool {
-    if (bodyReturnsBinding(body, name)) return true;
-    if (bodyAssignsBindingToOutParam(body, name)) return true;
-
-    var aliases: [8][]const u8 = undefined;
-    const n = collectOneHopAliases(body, name, &aliases);
-    for (aliases[0..n]) |alias| {
-        if (bodyReturnsBinding(body, alias)) return true;
-        if (bodyAssignsBindingToOutParam(body, alias)) return true;
+    var names: [8][]const u8 = undefined;
+    const n = collectAliasClosure(body, name, &names);
+    for (names[0..n]) |id| {
+        if (bodyReturnsBinding(body, id)) return true;
+        if (bodyAssignsBindingToOutParam(body, id)) return true;
     }
     return false;
 }
 
 fn bodyReleasesBindingTree(body: []const u8, name: []const u8) bool {
-    if (bodyReleasesBinding(body, name)) return true;
-    var aliases: [8][]const u8 = undefined;
-    const n = collectOneHopAliases(body, name, &aliases);
-    for (aliases[0..n]) |alias| {
-        if (bodyReleasesBinding(body, alias)) return true;
+    var names: [8][]const u8 = undefined;
+    const n = collectAliasClosure(body, name, &names);
+    for (names[0..n]) |id| {
+        if (bodyReleasesBinding(body, id)) return true;
     }
     return false;
 }
@@ -153,6 +157,30 @@ fn bodyReleasesBinding(body: []const u8, name: []const u8) bool {
         return true;
     }
     return false;
+}
+
+fn collectAliasClosure(body: []const u8, root: []const u8, out: *[8][]const u8) usize {
+    out[0] = root;
+    var n: usize = 1;
+    var i: usize = 0;
+    while (i < n) : (i += 1) {
+        var hop: [8][]const u8 = undefined;
+        const hn = collectOneHopAliases(body, out[i], &hop);
+        for (hop[0..hn]) |alias| {
+            var seen = false;
+            for (out[0..n]) |existing| {
+                if (std.mem.eql(u8, existing, alias)) {
+                    seen = true;
+                    break;
+                }
+            }
+            if (seen) continue;
+            if (n >= out.len) return n;
+            out[n] = alias;
+            n += 1;
+        }
+    }
+    return n;
 }
 
 fn collectOneHopAliases(body: []const u8, name: []const u8, out: *[8][]const u8) usize {
@@ -330,6 +358,25 @@ test "leaky local alloc is flagged; defer free and return-transfer are not" {
         \\    allocator.free(owned);
         \\}
     ;
+    const multi_hop_src =
+        \\pub fn giveChain(allocator: anytype, n: usize) ![]u8 {
+        \\    const buffer = try allocator.alloc(u8, n);
+        \\    const mid = buffer;
+        \\    const owned = mid;
+        \\    return owned;
+        \\}
+    ;
+    const alloc_print_fail_src =
+        \\pub fn leakyPrint(allocator: anytype) !usize {
+        \\    const msg = try std.fmt.allocPrint(allocator, "n={d}", .{1});
+        \\    return msg.len;
+        \\}
+    ;
+    const alloc_print_ok_src =
+        \\pub fn okPrint(allocator: anytype) ![]u8 {
+        \\    return try std.fmt.allocPrint(allocator, "n={d}", .{1});
+        \\}
+    ;
 
     var fail_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
     defer fail_diags.deinit(gpa);
@@ -375,6 +422,21 @@ test "leaky local alloc is flagged; defer free and return-transfer are not" {
     defer alias_free_diags.deinit(gpa);
     try analyzeSource("alias_free.zig", alias_free_src, &alias_free_diags, gpa);
     try std.testing.expect(alias_free_diags.items.len == 0);
+
+    var multi_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer multi_diags.deinit(gpa);
+    try analyzeSource("multi.zig", multi_hop_src, &multi_diags, gpa);
+    try std.testing.expect(multi_diags.items.len == 0);
+
+    var print_fail_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer print_fail_diags.deinit(gpa);
+    try analyzeSource("print_fail.zig", alloc_print_fail_src, &print_fail_diags, gpa);
+    try std.testing.expect(print_fail_diags.items.len >= 1);
+
+    var print_ok_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer print_ok_diags.deinit(gpa);
+    try analyzeSource("print_ok.zig", alloc_print_ok_src, &print_ok_diags, gpa);
+    try std.testing.expect(print_ok_diags.items.len == 0);
 
     const comment_src =
         \\pub fn documented() void {

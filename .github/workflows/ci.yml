@@ -60,12 +60,18 @@ jobs:
             echo "expected findings on fail fixture" >&2
             exit 1
           fi
+          if "$BIN" check fixtures/fail/alloc_print_undischarged.zig; then
+            echo "expected allocPrint findings" >&2
+            exit 1
+          fi
           # Pass fixture must be clean.
           "$BIN" check fixtures/pass/alloc_defer_free.zig
           "$BIN" check fixtures/pass/alloc_return_local.zig
           "$BIN" check fixtures/pass/alloc_return_alias.zig
+          "$BIN" check fixtures/pass/alloc_return_chain.zig
           "$BIN" check fixtures/pass/alloc_out_param.zig
           "$BIN" check fixtures/pass/alloc_explicit_free.zig
+          "$BIN" check fixtures/pass/alloc_print_return.zig
           "$BIN" check fixtures/pass/file_defer_close.zig
           "$BIN" check fixtures/pass/file_return.zig
           "$BIN" check fixtures/pass/ptrcast_remarked.zig

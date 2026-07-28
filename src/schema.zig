@@ -222,9 +222,13 @@ pub const seed_alloc_undischarged: Rule = .{
         "fixtures/pass/alloc_return_alias.zig",
         "fixtures/pass/alloc_out_param.zig",
         "fixtures/pass/alloc_explicit_free.zig",
+        "fixtures/pass/alloc_print_return.zig",
+        "fixtures/pass/alloc_return_chain.zig",
+        "fixtures/fail/alloc_print_undischarged.zig",
         "research/incidents/MYZIG-OWN-001.md",
         "research/incidents/MYZIG-OWN-002.md",
         "research/incidents/AZIG-OWN-002.md",
+        "research/incidents/AZIG-OWN-003.md",
     },
 };
 

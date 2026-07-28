@@ -9,8 +9,8 @@ myzig's early detectors are **local heuristics**, not whole-program proof.
 | Area | Limitation |
 |------|------------|
 | Path sensitivity | Conditional free/close may be treated as function-wide discharge |
-| Transfers | Direct `return …alloc`, local return, one-hop rename, out-params, and file-handle returns are tracked; multi-hop / wrapper APIs still weak |
-| Aliasing | Only one-hop `const alias = buf;` (exact RHS) is followed for transfer/free; deeper aliases stay invisible |
+| Transfers | Direct `return …alloc/allocPrint`, local return, rename chains, out-params, and file-handle returns are tracked; wrapper APIs still weak |
+| Aliasing | Exact RHS rename closure (bounded) is followed for transfer/free; wrapper APIs stay invisible |
 | Local free | `.free(name)` / `.destroy(name)` / `name.deinit(` discharge that binding; coarse function-wide `defer …deinit/free` remains for arena-style sites |
 | Cross-function | Callee frees / ownership handoff across functions are out of scope |
 | Arenas | Arena-scoped lifetimes are not modeled beyond coarse `defer …deinit` discharge (see `AZIG-OWN-001`) |

@@ -41,7 +41,7 @@ Also see `docs/BLINDSPOTS.md` (analyzer detail) and `docs/friction-playbook.md`.
 - Needle hits after `//` on the same line are ignored (comment examples are not findings).
 - `const buf = try allocator.alloc(...); return buf;` counts as transfer (not `return buf.len`).
 - One-hop rename (`const owned = buf; return owned;`) and out-params (`out.* = buf` / `out.* = try …alloc`) count as transfer.
-- Explicit `.free(name)` / `.destroy(name)` / `.release(name)` / `.unload(name)` / `name.deinit(` / `name.destroy(` / `name.release(` / `name.unload(` discharge that binding (and rename aliases), with or without `defer`.
+- Explicit `.free(name)` / `.destroy(name)` / `.release(name)` / `.unload(name)` / `.dealloc(name)` / `.unmap(name)` / `name.deinit(` / `name.destroy(` / `name.release(` / `name.unload(` / `name.shutdown(` / `name.dealloc(` / `name.unmap(` discharge that binding (and rename aliases), with or without `defer`.
 - Returning an opened file handle counts as transfer for `resource.file-undischarged`.
 - Acquires also include `.allocPrint(` / `.allocPrintZ(` / `.alignedAlloc(` / `.dupeZ(` / `.dupeSentinel(` / `.realloc(` / `mem.concat(` / `mem.join(` (see `AZIG-OWN-003`).
 - Rename chains (`a → b → c`) are followed for transfer/free (bounded closure).
@@ -57,7 +57,7 @@ Also see `docs/BLINDSPOTS.md` (analyzer detail) and `docs/friction-playbook.md`.
 - Hidden `page_allocator` / `c_allocator` use on alloc/free lines is a convention note (`EXT-STUDY-004`).
 - Empty `catch {}` / `catch unreachable` are convention notes; comment-only catch and documented unreachable are allowed (`EXT-STUDY-005`, `EXT-STUDY-009`).
 - Inline suppressions: `// myzig-disable-next-line` / `myzig-disable-current-line` [`rule_id…`] (`EXT-STUDY-005`).
-- `.init(` bindings without `.deinit` / `.destroy` / `.unload` / return transfer are convention notes (`EXT-STUDY-012`, `EXT-STUDY-023`, `EXT-STUDY-025`); `return .{ .f = name }` transfers (`EXT-STUDY-020`).
+- `.init(` bindings without `.deinit` / `.destroy` / `.unload` / `.shutdown` / return transfer are convention notes (`EXT-STUDY-012`, `EXT-STUDY-023`, `EXT-STUDY-025`, `EXT-STUDY-031`); `return .{ .f = name }` transfers (`EXT-STUDY-020`).
 - Optional `myzig.compat.PhaseAllocator` seals alloc capability after startup (`EXT-STUDY-010`).
 - Post-Zig / foreign runtimes are allocator-*shape* references only (`EXT-STUDY-028`); borrowed-arena and single-buffer scratch tips stay playbook (`EXT-STUDY-029`, `EXT-STUDY-030`).
 

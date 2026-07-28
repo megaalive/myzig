@@ -18,7 +18,7 @@ const acquire_needles = [_][]const u8{
     ".create(",
     ".dupe(",
 };
-const discharge_words = [_][]const u8{ "free", "destroy", "deinit", "release", "unload" };
+const discharge_words = [_][]const u8{ "free", "destroy", "deinit", "release", "unload", "shutdown", "dealloc", "unmap" };
 
 pub fn analyzeSource(
     path: []const u8,
@@ -345,8 +345,8 @@ fn bodyReleasesBindingTree(body: []const u8, name: []const u8) bool {
 }
 
 fn bodyReleasesBinding(body: []const u8, name: []const u8) bool {
-    // `.free(name)` / `.destroy(name)` / `.release(name)` / `.unload(name)` — including under `defer` / `errdefer`.
-    const call_needles = [_][]const u8{ ".free(", ".destroy(", ".release(", ".unload(" };
+    // `.free(name)` / `.destroy(name)` / `.release(name)` / `.unload(name)` / `.dealloc(name)` / `.unmap(name)`.
+    const call_needles = [_][]const u8{ ".free(", ".destroy(", ".release(", ".unload(", ".dealloc(", ".unmap(" };
     for (call_needles) |needle| {
         var i: usize = 0;
         while (i < body.len) : (i += 1) {
@@ -362,8 +362,8 @@ fn bodyReleasesBinding(body: []const u8, name: []const u8) bool {
             return true;
         }
     }
-    // `name.deinit(` / `name.destroy(` / `name.release(` / `name.unload(` for create-style objects.
-    const method_needles = [_][]const u8{ ".deinit(", ".destroy(", ".release(", ".unload(" };
+    // Method forms on the binding (create-style / GPU objects).
+    const method_needles = [_][]const u8{ ".deinit(", ".destroy(", ".release(", ".unload(", ".shutdown(", ".dealloc(", ".unmap(" };
     var i: usize = 0;
     while (i < body.len) : (i += 1) {
         if (!std.mem.startsWith(u8, body[i..], name)) continue;
@@ -877,4 +877,15 @@ test "leaky local alloc is flagged; defer free and return-transfer are not" {
     defer unload_diags.deinit(gpa);
     try analyzeSource("unload.zig", unload_src, &unload_diags, gpa);
     try std.testing.expect(unload_diags.items.len == 0);
+
+    const unmap_src =
+        \\pub fn ok(allocator: anytype) !void {
+        \\    const buf = try allocator.create(u32);
+        \\    defer buf.unmap();
+        \\}
+    ;
+    var unmap_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer unmap_diags.deinit(gpa);
+    try analyzeSource("unmap.zig", unmap_src, &unmap_diags, gpa);
+    try std.testing.expect(unmap_diags.items.len == 0);
 }

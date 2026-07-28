@@ -11,7 +11,7 @@ myzig's early detectors are **local heuristics**, not whole-program proof.
 | Path sensitivity | Conditional free/close may be treated as function-wide discharge |
 | Transfers | Return / out-param / indexed-out / rename / retarget / field-store / `return .{ fields }` / append / arena-backed; wrapper / callee frees still weak |
 | Aliasing | Exact RHS rename closure (bounded) is followed for transfer/free; wrapper APIs stay invisible |
-| Local free | `.free(name)` / `.destroy(name)` / `.release(name)` / `.unload(name)` / `name.deinit(`/`.destroy(`/`.release(`/`.unload(` discharge that binding; coarse function-wide `defer …deinit/free/release/unload` remains for arena-style sites |
+| Local free | `.free`/`.destroy`/`.release`/`.unload`/`.dealloc`/`.unmap`(name) and `name.deinit`/`.destroy`/`.release`/`.unload`/`.shutdown`/`.dealloc`/`.unmap(` discharge that binding; coarse function-wide `defer …` discharge remains for arena-style sites |
 | Permits | `@ptrCast`/`@alignCast` accept permit/safety on adjacent lines (prev/curr/next) |
 | Cross-function | Callee frees / ownership handoff across functions are out of scope |
 | Arenas | Arena-scoped lifetimes are not modeled beyond coarse `defer …deinit` discharge (see `AZIG-OWN-001`) |
@@ -46,6 +46,12 @@ myzig's early detectors are **local heuristics**, not whole-program proof.
 | Post-Zig samples | Non-Zig runtimes teach shapes only — not detectors (`EXT-STUDY-028`) |
 | Borrowed arenas | Outlives + null→global dual heap not modeled (`EXT-STUDY-029`) |
 | Scratch buffers | Single-buffer / nullable allocator APIs are playbook (`EXT-STUDY-030`) |
+| setup/shutdown | `shutdown`/`dealloc` discharge; resource state machines not modeled (`EXT-STUDY-031`) |
+| Handle pools | Opaque GPU handles / releaseResource are playbook (`EXT-STUDY-032`) |
+| destroy+release | Dual teardown + unmap timing not ordered (`EXT-STUDY-033`) |
+| Context/Surface | Borrowed surface + same-alloc lifetime playbook (`EXT-STUDY-034`) |
+| Memory pools | Pool vs GPA destroy not distinguished (`EXT-STUDY-035`) |
+| Binding gens | Generators are naming references only (`EXT-STUDY-036`) |
 
 ## Product stance
 

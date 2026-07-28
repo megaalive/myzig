@@ -321,3 +321,52 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **don't:** Call per-pointer `free` on a no-op scratch API and assume GPA sees it
 - **promote-to-code-when:** playbook; compat helper only if dogfood repeats
 - **incident:** EXT-STUDY-030
+
+### F-OWN-034 · Graphics modules use setup/shutdown
+- **symptom:** inventing `deinit` for a gfx module that exposes `shutdown`, or leaking `make*` resources
+- **do:** `setup` + `defer shutdown`; per-resource `destroy*` (or uninit+dealloc for async)
+- **don't:** Assume process exit cleans GPU pools in long-lived apps
+- **promote-to-code-when:** already promoted → `shutdown`/`dealloc` discharge
+- **incident:** EXT-STUDY-031
+
+### F-OWN-035 · GPU handle pools own the real objects
+- **symptom:** calling `allocator.destroy` on a `BufferHandle` or forgetting `releaseResource`
+- **do:** Create/lookup/release through the graphics context; handles are not Zig heap pointers
+- **don't:** Cache raw GPU pointers across `releaseResource`
+- **promote-to-code-when:** playbook; `release` already helps tracked creates
+- **incident:** EXT-STUDY-032
+
+### F-OWN-036 · Drain GPU before destroying the context
+- **symptom:** tearing down device/pools while frames or `mapAsync` are outstanding
+- **do:** Wait for CPU/GPU frame sync (and mapped staging) before pool/`device.release`
+- **don't:** Treat context `destroy` as instantaneous with in-flight work
+- **promote-to-code-when:** playbook (async CFG)
+- **incident:** EXT-STUDY-032
+
+### F-OWN-037 · destroy, release, and unmap are distinct
+- **symptom:** only `release` without `destroy`, skipping `unmap`, or deferring pass-encoder release too late
+- **do:** Match the API: invalidate (`destroy`), drop (`release`), unmap mapped ranges; release pass encoders when the API requires
+- **don't:** Assume one teardown word covers WebGPU object graphs
+- **promote-to-code-when:** `unmap`/`release`/`destroy` discharge; ordering stays playbook
+- **incident:** EXT-STUDY-033
+
+### F-OWN-038 · Context may not own the Surface
+- **symptom:** assuming `Context.deinit` frees the pixel surface, or mixing allocators on one surface
+- **do:** Caller owns `Surface`; Context owns managed Path/font; one allocator for the surface's life
+- **don't:** Pass a different allocator into later surface methods
+- **promote-to-code-when:** playbook
+- **incident:** EXT-STUDY-034
+
+### F-OWN-039 · Pool destroy returns a slot
+- **symptom:** `gpa.destroy` on a `MemoryPool.create` pointer, or leaking pool-backed UI wrappers
+- **do:** Return objects with `pool.destroy`; pair app `init`/`deinit`
+- **don't:** Treat pool slots like ordinary GPA allocations
+- **promote-to-code-when:** playbook (multi-arg create skipped)
+- **incident:** EXT-STUDY-035
+
+### F-OWN-040 · Binding generators are not app templates
+- **symptom:** copying generator arena/XML lifetime into a game loop
+- **do:** Learn `Destroy*` naming from generated APIs; ignore generator process heaps
+- **don't:** Promote XML-parser patterns into seed detectors
+- **promote-to-code-when:** study boundary
+- **incident:** EXT-STUDY-036

@@ -54,6 +54,12 @@ Rules (and compat/contract improvements) are born from incidents.
 | `EXT-STUDY-028` | Post-Zig runtime = allocator-shape reference only |
 | `EXT-STUDY-029` | Borrowed arena ptr + null→global fallback |
 | `EXT-STUDY-030` | Single-buffer scratch + nullable allocator |
+| `EXT-STUDY-031` | setup/shutdown + two-phase GPU destroy/dealloc |
+| `EXT-STUDY-032` | Handle pools; releaseResource; drain GPU first |
+| `EXT-STUDY-033` | WebGPU destroy/release/unmap + mid-scope release |
+| `EXT-STUDY-034` | Managed Context vs borrowed Surface |
+| `EXT-STUDY-035` | MemoryPool return + app init/deinit frames |
+| `EXT-STUDY-036` | Binding generators → Destroy* naming only |
 | `ZRIG-DOGFOOD-001` | Clean prefer-compat ratchet baseline |
 | `AGENT-STD-001` / `002` | std churn → compat + volatile rule |
 | `AGENT-CLI-001` / `002` | Clean exits; exhaustive CLI / witness hash |

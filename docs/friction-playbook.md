@@ -596,9 +596,9 @@ elease already helps
 
 ### F-HARNESS-003 · Prove net.http.get on loopback first
 - **symptom:** External URL timeouts look like a broken HTTP tool
-- **do:** `--allow net.connect`, smoke `http://127.0.0.1:<port>/`, then try outbound
+- **do:** `--allow net.connect`, smoke `http://127.0.0.1:<port>/` via `scripts/http-loopback-smoke.ps1` (or CI loopback step), then try outbound
 - **don't:** Rewrite Client wiring before proving loopback
-- **promote-to-code-when:** playbook (environment variance)
+- **promote-to-code-when:** already promoted → zrig `scripts/http-loopback-smoke.ps1` + CI loopback gate
 - **incident:** ZRIG-DOGFOOD-005
 
 ### F-HARNESS-004 · Agent tool loops need plans + receipts

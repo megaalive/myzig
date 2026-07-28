@@ -9,13 +9,14 @@ Agents assumed the HTTP tool was broken.
 ## Do
 
 1. Capability: `--allow net.connect` or `.zrig/capabilities`
-2. Smoke against loopback (python `-m http.server` / tiny Zig listener)
+2. Smoke against loopback: `powershell -File scripts/http-loopback-smoke.ps1`
+   (CI runs the same pattern with `python3 -m http.server`)
 3. Only then try external URLs
 
 ## myzig knowledge
 
-Playbook `F-HARNESS-003`. Not a myzig detector — harness/network tip.
+Playbook `F-HARNESS-003`. Harness/network tip — not a detector.
 
-## Boundary
+## Promotion
 
-Does not change TLS/certificate policy; documents environment variance.
+zrig `scripts/http-loopback-smoke.ps1` + GitHub Actions loopback gate.

@@ -18,7 +18,7 @@ const acquire_needles = [_][]const u8{
     ".create(",
     ".dupe(",
 };
-const discharge_words = [_][]const u8{ "free", "destroy", "deinit", "release", "unload", "shutdown", "dealloc", "unmap" };
+const discharge_words = [_][]const u8{ "free", "destroy", "deinit", "release", "unload", "shutdown", "dealloc", "unmap", "cancel", "close" };
 
 pub fn analyzeSource(
     path: []const u8,
@@ -347,8 +347,8 @@ fn bodyReleasesBindingTree(body: []const u8, name: []const u8) bool {
 }
 
 fn bodyReleasesBinding(body: []const u8, name: []const u8) bool {
-    // `.free(name)` / `.destroy(name)` / `.release(name)` / `.unload(name)` / `.dealloc(name)` / `.unmap(name)`.
-    const call_needles = [_][]const u8{ ".free(", ".destroy(", ".release(", ".unload(", ".dealloc(", ".unmap(" };
+    // `.free(name)` / `.destroy(name)` / … / `.cancel(name)` / `.close(name)`.
+    const call_needles = [_][]const u8{ ".free(", ".destroy(", ".release(", ".unload(", ".dealloc(", ".unmap(", ".cancel(", ".close(" };
     for (call_needles) |needle| {
         var i: usize = 0;
         while (i < body.len) : (i += 1) {
@@ -364,8 +364,8 @@ fn bodyReleasesBinding(body: []const u8, name: []const u8) bool {
             return true;
         }
     }
-    // Method forms on the binding (create-style / GPU objects).
-    const method_needles = [_][]const u8{ ".deinit(", ".destroy(", ".release(", ".unload(", ".shutdown(", ".dealloc(", ".unmap(" };
+    // Method forms on the binding (create-style / GPU / IO objects).
+    const method_needles = [_][]const u8{ ".deinit(", ".destroy(", ".release(", ".unload(", ".shutdown(", ".dealloc(", ".unmap(", ".cancel(", ".close(" };
     var i: usize = 0;
     while (i < body.len) : (i += 1) {
         if (!std.mem.startsWith(u8, body[i..], name)) continue;
@@ -901,4 +901,15 @@ test "leaky local alloc is flagged; defer free and return-transfer are not" {
     defer boottime_diags.deinit(gpa);
     try analyzeSource("boottime.zig", boottime_src, &boottime_diags, gpa);
     try std.testing.expect(boottime_diags.items.len == 0);
+
+    const cancel_src =
+        \\pub fn ok(allocator: anytype) !void {
+        \\    const c = try allocator.create(u32);
+        \\    defer c.cancel();
+        \\}
+    ;
+    var cancel_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer cancel_diags.deinit(gpa);
+    try analyzeSource("cancel.zig", cancel_src, &cancel_diags, gpa);
+    try std.testing.expect(cancel_diags.items.len == 0);
 }

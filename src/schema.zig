@@ -6,7 +6,7 @@
 const std = @import("std");
 
 /// Bumped when seed rule set identity changes in a receipt-relevant way.
-pub const ruleset_revision: []const u8 = "0.0.0-seed14";
+pub const ruleset_revision: []const u8 = "0.0.0-seed15";
 
 pub const Certainty = enum {
     /// Expensive; only when local facts suffice. Heuristic AST rules must not use this as ceiling.
@@ -236,6 +236,7 @@ pub const seed_alloc_undischarged: Rule = .{
         "fixtures/pass/alloc_release.zig",
         "fixtures/pass/alloc_unload.zig",
         "fixtures/pass/alloc_unmap.zig",
+        "fixtures/pass/alloc_cancel.zig",
         "fixtures/pass/method_create_store.zig",
         "fixtures/pass/alloc_indexed_out.zig",
         "fixtures/fail/alloc_print_undischarged.zig",
@@ -258,6 +259,8 @@ pub const seed_alloc_undischarged: Rule = .{
         "research/incidents/EXT-STUDY-031.md",
         "research/incidents/EXT-STUDY-033.md",
         "research/incidents/EXT-STUDY-039.md",
+        "research/incidents/EXT-STUDY-043.md",
+        "research/incidents/EXT-STUDY-046.md",
     },
 };
 
@@ -483,18 +486,18 @@ pub const seed_init_without_deinit: Rule = .{
     .obligation = .other,
     .detector = .local_ast,
     .discharges = &.{.other},
-    .message = "init without matching deinit/destroy/unload/shutdown on the same binding",
+    .message = "init without matching deinit/destroy/unload/shutdown/close on the same binding",
     .explanation =
     \\Resource-shaped values constructed with `.init(` usually need a matching
-    \\`.deinit`, `.destroy`, `.unload`, or `.shutdown` (often under `defer`).
-    \\Returning the binding counts as transfer. Convention only — not every
-    \\`.init` is a resource.
+    \\`.deinit`, `.destroy`, `.unload`, `.shutdown`, or `.close` (often under
+    \\`defer`). Returning the binding counts as transfer. Convention only —
+    \\not every `.init` is a resource.
     ,
     .repairs = &.{
         .{
             .tier = .canonical,
             .intent = "local_lifetime",
-            .summary = "Add `defer name.deinit/destroy/unload/shutdown(...)` (or transfer ownership).",
+            .summary = "Add `defer name.deinit/destroy/unload/shutdown/close(...)` (or transfer ownership).",
         },
     },
     .references = &.{
@@ -503,12 +506,14 @@ pub const seed_init_without_deinit: Rule = .{
         "fixtures/pass/init_defer_destroy.zig",
         "fixtures/pass/init_defer_unload.zig",
         "fixtures/pass/init_defer_shutdown.zig",
+        "fixtures/pass/init_defer_close.zig",
         "fixtures/pass/init_struct_return.zig",
         "research/incidents/EXT-STUDY-012.md",
         "research/incidents/EXT-STUDY-020.md",
         "research/incidents/EXT-STUDY-023.md",
         "research/incidents/EXT-STUDY-025.md",
         "research/incidents/EXT-STUDY-031.md",
+        "research/incidents/EXT-STUDY-046.md",
     },
 };
 

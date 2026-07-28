@@ -66,9 +66,22 @@ Rules (and compat/contract improvements) are born from incidents.
 | `EXT-STUDY-040` | Bump linker RAM with no free |
 | `EXT-STUDY-041` | Page-table ownership bits / refcount |
 | `EXT-STUDY-042` | Guest quotas vs hypervisor heap |
+| `EXT-STUDY-043` | Event-loop completions + cancel; zero runtime alloc |
+| `EXT-STUDY-044` | Connection arena reset with retain limit |
+| `EXT-STUDY-045` | Pooled buffer provider release/promote |
+| `EXT-STUDY-046` | Socket close + global network init/deinit |
+| `EXT-STUDY-047` | TLS close_notify + key material lifetime |
+| `EXT-STUDY-048` | Wasm store owns instance memory |
+| `EXT-STUDY-049` | Image PixelStorage same-allocator deinit |
+| `EXT-STUDY-050` | Steady-state zero alloc / static limits |
+| `EXT-STUDY-051` | LSP DocumentStore = tooling-shaped |
+| `EXT-STUDY-052` | Tripwire injects errdefer failures |
+| `EXT-STUDY-053` | Crypto keys are wipe-scoped secrets |
+| `EXT-STUDY-054` | Finish external-study shortlists in one batch |
 | `ZRIG-DOGFOOD-001` | Clean prefer-compat ratchet baseline |
 | `AGENT-STD-001` / `002` | std churn → compat + volatile rule |
 | `AGENT-CLI-001` / `002` | Clean exits; exhaustive CLI / witness hash |
+| `AGENT-STUDY-001` | Finish named external-study shortlists |
 | `docs/LIMITS.md` | Published honest ceilings (`myzig limits`) |
 
 See `docs/agent-friction.md` and `docs/friction-playbook.md`.

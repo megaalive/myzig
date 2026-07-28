@@ -11,7 +11,7 @@ myzig's early detectors are **local heuristics**, not whole-program proof.
 | Path sensitivity | Conditional free/close may be treated as function-wide discharge |
 | Transfers | Return / out-param / indexed-out / rename / retarget / field-store / `return .{ fields }` / append / arena-backed; wrapper / callee frees still weak |
 | Aliasing | Exact RHS rename closure (bounded) is followed for transfer/free; wrapper APIs stay invisible |
-| Local free | `.free`/`.destroy`/`.release`/`.unload`/`.dealloc`/`.unmap`(name) and `name.deinit`/`.destroy`/`.release`/`.unload`/`.shutdown`/`.dealloc`/`.unmap(` discharge that binding; coarse function-wide `defer …` discharge remains for arena-style sites |
+| Local free | `.free`/`.destroy`/`.release`/`.unload`/`.dealloc`/`.unmap`/`.cancel`/`.close`(name) and `name.deinit`/`.destroy`/`.release`/`.unload`/`.shutdown`/`.dealloc`/`.unmap`/`.cancel`/`.close(` discharge that binding; coarse function-wide `defer …` discharge remains for arena-style sites |
 | Permits | `@ptrCast`/`@alignCast` accept permit/safety on adjacent lines (prev/curr/next) |
 | Cross-function | Callee frees / ownership handoff across functions are out of scope |
 | Arenas | Arena-scoped lifetimes are not modeled beyond coarse `defer …deinit` discharge (see `AZIG-OWN-001`) |
@@ -58,6 +58,16 @@ myzig's early detectors are **local heuristics**, not whole-program proof.
 | Bump RAM | Linker bump allocators invisible to alloc needles (`EXT-STUDY-040`) |
 | PTE ownership | Ownership/refcount flags not parsed (`EXT-STUDY-041`) |
 | Guest isolation | Hypervisor quotas playbook only (`EXT-STUDY-042`) |
+| Event-loop cancel | `cancel`/`close` discharge; outstanding ops not CFG (`EXT-STUDY-043`, `046`) |
+| Conn arenas | Keep-alive retain limits playbook (`EXT-STUDY-044`) |
+| Buffer pools | Pool vs heap promotion not tracked (`EXT-STUDY-045`) |
+| TLS secrets | close_notify / wipe playbook (`EXT-STUDY-047`, `053`) |
+| Wasm stores | Store/memory graphs playbook (`EXT-STUDY-048`) |
+| Image allocators | Same-alloc identity not proven (`EXT-STUDY-049`) |
+| Static steady-state | Zero-alloc hot paths not proven (`EXT-STUDY-050`) |
+| Tooling stores | LSP/DocumentStore = boundary (`EXT-STUDY-051`) |
+| Tripwire | errdefer injection is test harness only (`EXT-STUDY-052`) |
+| Study batching | Named shortlists must be finished or dated (`EXT-STUDY-054`) |
 
 ## Product stance
 

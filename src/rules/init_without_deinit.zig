@@ -95,8 +95,8 @@ fn nextInitAssign(body: []const u8, from: usize) ?InitHit {
 }
 
 fn bodyHasDeinit(body: []const u8, name: []const u8) bool {
-    // `name.deinit` / `name.destroy` / `name.unload` / `name.shutdown` (and under defer / errdefer).
-    const suffixes = [_][]const u8{ ".deinit", ".destroy", ".unload", ".shutdown" };
+    // `name.deinit` / `name.destroy` / `name.unload` / `name.shutdown` / `name.close` (and under defer / errdefer).
+    const suffixes = [_][]const u8{ ".deinit", ".destroy", ".unload", ".shutdown", ".close" };
     var i: usize = 0;
     while (i < body.len) : (i += 1) {
         if (!std.mem.startsWith(u8, body[i..], name)) continue;
@@ -251,4 +251,15 @@ test "init without deinit flagged; defer deinit and return transfer are not" {
     defer shutdown_diags.deinit(gpa);
     try analyzeSource("shutdown.zig", shutdown_src, &shutdown_diags, gpa);
     try std.testing.expect(shutdown_diags.items.len == 0);
+
+    const close_src =
+        \\pub fn ok() !void {
+        \\    var sock = try Sock.init();
+        \\    defer sock.close();
+        \\}
+    ;
+    var close_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer close_diags.deinit(gpa);
+    try analyzeSource("close.zig", close_src, &close_diags, gpa);
+    try std.testing.expect(close_diags.items.len == 0);
 }

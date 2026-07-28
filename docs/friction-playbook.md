@@ -412,3 +412,87 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **don't:** Collapse guest GPA space into the HV free-list
 - **promote-to-code-when:** playbook
 - **incident:** EXT-STUDY-042
+
+### F-OWN-047 · Completions outlive the submit call
+- **symptom:** stack Completion goes out of scope while the event loop still owns the op; forgetting cancel
+- **do:** Keep completions stable until done; allocate cancel completions when required; prefer zero runtime alloc pools
+- **don't:** defer loop.deinit while ops are outstanding without draining/cancel
+- **promote-to-code-when:** cancel discharges; outstanding-op CFG stays playbook
+- **incident:** EXT-STUDY-043
+
+### F-OWN-048 · Connection arenas reset with a retain cap
+- **symptom:** unbounded arena growth across keep-alive requests, or freeing connection buffers the pool still owns
+- **do:** rena.reset(.{ .retain_with_limit = N }) per request; deinit TLS with the server
+- **don't:** Mix GPA free with connection-arena slices
+- **promote-to-code-when:** playbook (see also F-OWN-018)
+- **incident:** EXT-STUDY-044
+
+### F-OWN-049 · Buffer pools release or promote carefully
+- **symptom:** llocator.free on a still-pooled buffer, or leaking after grow promotes out of the pool
+- **do:** pool.release when pooled; after promotion free with the allocator only
+- **don't:** Assume resize keeps the buffer in the pool
+- **promote-to-code-when:** playbook; elease already helps
+- **incident:** EXT-STUDY-045
+
+### F-OWN-050 · Sockets close; network may need global init
+- **symptom:** inventing deinit for sockets, or skipping process-wide network init/deinit
+- **do:** defer sock.close(); pair global init/deinit when the stack requires it
+- **don't:** Treat socket fds like Zig heap pointers
+- **promote-to-code-when:** already promoted → close matches init + alloc discharge
+- **incident:** EXT-STUDY-046
+
+### F-OWN-051 · TLS ends with close_notify
+- **symptom:** hard-closing without alert, or retaining handshake key material
+- **do:** Prefer clean close_notify; scope secrets to the session
+- **don't:** Log transcript secrets
+- **promote-to-code-when:** playbook
+- **incident:** EXT-STUDY-047
+
+### F-OWN-052 · Wasm store deinit owns memories
+- **symptom:** freeing linear memory while the store still references it, or leaking the store
+- **do:** defer store.deinit(); pair Memory.init/deinit; treat exports as store handles
+- **don't:** Assume host slices outlive guest memory after deinit
+- **promote-to-code-when:** playbook
+- **incident:** EXT-STUDY-048
+
+### F-OWN-053 · Image buffers keep one allocator
+- **symptom:** deinit with a different allocator than PixelStorage.init, or leaking scaled temps
+- **do:** Same allocator for life; errdefer/defer every temp image
+- **don't:** Return pixel slices after image deinit
+- **promote-to-code-when:** playbook
+- **incident:** EXT-STUDY-049
+
+### F-OWN-054 · Steady-state paths avoid GPA
+- **symptom:** hot-path llocator.alloc in journals/replicas/event loops sized for static limits
+- **do:** Size at startup / use static buffers; seal with PhaseAllocator when phases exist
+- **don't:** Copy fuzz-only GPA usage into production steady state
+- **promote-to-code-when:** playbook + PhaseAllocator
+- **incident:** EXT-STUDY-050
+
+### F-OWN-055 · Language-server stores are tooling-shaped
+- **symptom:** copying DocumentStore open/close arenas into a game/server loop
+- **do:** Learn document arenas for tooling; do not treat LSP as an app template
+- **don't:** Promote zls-specific graphs into seed detectors
+- **promote-to-code-when:** study boundary
+- **incident:** EXT-STUDY-051
+
+### F-OWN-056 · Tripwire every important errdefer
+- **symptom:** errdefer paths never fail in tests
+- **do:** Inject fail points; assert cleanup; reset the tripwire module
+- **don't:** Assume happy-path tests prove ownership on errors
+- **promote-to-code-when:** playbook / agent testing tip
+- **incident:** EXT-STUDY-052
+
+### F-OWN-057 · Wipe crypto secrets when done
+- **symptom:** keys lingering in heap logs or long-lived structs
+- **do:** Prefer fixed buffers; minimize copies; wipe when the API allows
+- **don't:** Print nonces/keys from TLS or AEAD state
+- **promote-to-code-when:** playbook
+- **incident:** EXT-STUDY-053
+
+### F-AGENT-003 · Finish named external-study shortlists
+- **symptom:** agent lists N concrete study repos then ships only a subset (“optional next”)
+- **do:** Clone/survey/promote/ship the entire named set in one batch (or write an explicit dated debt with owners)
+- **don't:** End a turn with unpaid concrete targets presented as finished work
+- **promote-to-code-when:** process forever (text)
+- **incident:** EXT-STUDY-054

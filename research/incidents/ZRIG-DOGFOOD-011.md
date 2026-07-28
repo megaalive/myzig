@@ -9,7 +9,8 @@ Host-parity smoke of `zrig mcp serve`: `net.tcp.probe` to a closed
 ## Do
 
 Treat `isError` as a normal tool outcome. Do not restart the MCP process or
-rewrite Client wiring because one probe failed.
+rewrite Client wiring because one probe failed. Local/CI proof:
+`examples/mcp-smoke-iserror.jsonl` via `scripts/mcp-smoke.ps1`.
 
 ## Friction tip
 

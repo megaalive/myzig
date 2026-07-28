@@ -654,7 +654,14 @@ elease already helps
 
 ### F-HARNESS-009 · MCP tool failure is `isError`, not a server crash
 - **symptom:** Host treats refused TCP / missing file as a broken MCP session, or expects process exit
-- **do:** Read `tools/call` result `isError: true` and the text payload (`ConnectionRefused`, etc.). Server stays up for the next request. Smoke with `examples/mcp-smoke.jsonl` / `scripts/mcp-smoke.ps1` including a deliberate fail (e.g. `net.tcp.probe` to a closed port)
+- **do:** Read `tools/call` result `isError: true` and the text payload (`ConnectionRefused`, etc.). Server stays up for the next request. Smoke with `examples/mcp-smoke-iserror.jsonl` / `scripts/mcp-smoke.ps1` (PowerShell: `$ErrorActionPreference = Continue` so native stderr does not abort the pipe)
 - **don't:** Restart `zrig mcp serve` or rewrite Client wiring because one tool returned an error
-- **promote-to-code-when:** playbook tip; optional MCP smoke assert on `isError`
+- **promote-to-code-when:** already promoted → `examples/mcp-smoke-iserror.jsonl` + CI/local mcp-smoke assert
 - **incident:** ZRIG-DOGFOOD-011
+
+### F-OWN-068 · Comment-only `catch` must not hide `};`
+- **symptom:** `expected ';' after statement` after documenting empty `catch {}` for swallow-error
+- **do:** Multi-line `catch {\n    // intentional …\n};` so the closing brace is not line-commented
+- **don't:** One-liner `catch { // reason };` (Zig comments out `};`)
+- **promote-to-code-when:** stay text unless agents keep repeating
+- **incident:** none yet

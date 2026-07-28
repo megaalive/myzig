@@ -617,7 +617,14 @@ elease already helps
 
 ### F-HARNESS-006 · MCP stdio is tools-only JSON-RPC
 - **symptom:** Client expects resources/prompts/SSE, or hangs waiting for HTTP
-- **do:** Point hosts at `zrig mcp serve` (stdio). Use `examples/mcp-smoke.jsonl` / `docs/mcp-client.md`. Pass args as `{"args":[...]}`. Grant caps via `.zrig/capabilities`, `ZRIG_ALLOW`, or `serve --allow`
+- **do:** Point hosts at `zrig mcp serve` (stdio). Use `examples/mcp-smoke.jsonl` / `docs/mcp-client.md`. Prefer named `inputSchema` fields; `{"args":[...]}` still works. Grant caps via `.zrig/capabilities`, `ZRIG_ALLOW`, or `serve --allow`
 - **don't:** Expect Streamable HTTP, OAuth, or V4 model routing from zrig yet
 - **promote-to-code-when:** already promoted → stdio `initialize`/`tools/*` in `src/mcp.zig`
 - **incident:** ZRIG-DOGFOOD-007
+
+### F-HARNESS-007 · Prefer named MCP tool fields over raw argv guesswork
+- **symptom:** Hosts call `net.dns` / `files.read` with wrong key order or invent `query`/`file`
+- **do:** Read each tool's `inputSchema` (`host`, `path`, `url`, `command`, …); fall back to `args` only when needed
+- **don't:** Assume map iteration order of string fields is stable across hosts
+- **promote-to-code-when:** already promoted → per-tool schemas in zrig `writeInputSchema`
+- **incident:** ZRIG-DOGFOOD-008

@@ -49,7 +49,7 @@ pub fn writeContract(writer: *std.Io.Writer, version: []const u8) std.Io.Writer.
         \\- Transfer tips: two-step field store / put / `takeOwnership*` / same-file callee free (`F-OWN-065`)
         \\- FFI wrappers: `ffi.wrapper-init-without-deinit` on `c.` files (`F-OWN-066`)
         \\- Sentinel types: keep `[:0]u8` from `dupeZ` / `allocSentinel` (`F-OWN-067`)
-        \\- Dogfood apps (zrig): clean denial exits (`F-CLI-007`); plans+receipts+artifacts (`F-HARNESS-004`); respect stop/continue flags (`F-HARNESS-005`); MCP stdio is tools-only (`F-HARNESS-006`); V4 router locked
+        \\- Dogfood apps (zrig): clean denial exits (`F-CLI-007`); plans+receipts+artifacts (`F-HARNESS-004`); respect stop/continue flags (`F-HARNESS-005`); MCP stdio is tools-only (`F-HARNESS-006`); prefer named MCP fields (`F-HARNESS-007`); V4 router locked
         \\
     );
 }

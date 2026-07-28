@@ -634,7 +634,7 @@ elease already helps
 ### F-HARNESS-006 · MCP stdio is tools-only JSON-RPC
 - **symptom:** Client expects resources/prompts/SSE, or hangs waiting for HTTP
 - **do:** Point hosts at `zrig mcp serve` (stdio). Use `examples/mcp-smoke.jsonl` / `docs/mcp-client.md`. Prefer named `inputSchema` fields; `{"args":[...]}` still works. Grant caps via `.zrig/capabilities`, `ZRIG_ALLOW`, or `serve --allow`
-- **don't:** Expect Streamable HTTP, OAuth, or V4 model routing from zrig yet
+- **don't:** Expect resources/prompts/SSE from the V3 stdio surface; use V4+ docs for model routing growth
 - **promote-to-code-when:** already promoted → stdio `initialize`/`tools/*` in `src/mcp.zig`
 - **incident:** ZRIG-DOGFOOD-007
 
@@ -658,6 +658,13 @@ elease already helps
 - **don't:** Restart `zrig mcp serve` or rewrite Client wiring because one tool returned an error
 - **promote-to-code-when:** already promoted → `examples/mcp-smoke-iserror.jsonl` + CI/local mcp-smoke assert
 - **incident:** ZRIG-DOGFOOD-011
+
+### F-HARNESS-010 · zrig growth is unbounded; azig is retired
+- **symptom:** Agents maintain azig for dogfood or refuse V4+ because of an old lock note
+- **do:** Grow zrig via `docs/GROWTH.md` / `docs/V4.md`; use fpagnt as capability bar; leave azig alone unless product revival is explicit
+- **don't:** Treat “V3 MCP closed” as end of zrig, or schedule azig care to mature myzig
+- **promote-to-code-when:** stay text; product slices land in zrig
+- **incident:** none yet
 
 ### F-OWN-068 · Comment-only `catch` must not hide `};`
 - **symptom:** `expected ';' after statement` after documenting empty `catch {}` for swallow-error

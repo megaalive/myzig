@@ -1,8 +1,12 @@
 # Agent-authoring friction → myzig improvement
 
-myzig is not only dogfooded by **zrig** and **azig**. It is also dogfooded by
-**LLM coding agents** that write Zig — especially while building myzig/zrig
-themselves — regardless of which IDE, CLI, or orchestration harness hosts them.
+myzig is primarily dogfooded by **zrig** (unbounded growth) and by **LLM coding
+agents** that write Zig — especially while building myzig/zrig themselves —
+regardless of which IDE, CLI, or orchestration harness hosts them.
+
+**azig** is a retired lab: keep historical `AZIG-OWN-*` incidents, but do not
+schedule azig maintenance to mature myzig. Capability-bar reference for product
+ambition: sibling **fpagnt** (Free Pascal) — see zrig `docs/GROWTH.md`.
 
 Why: future apps will often be created by agents in some harness. If the model
 repeatedly trips on the same Zig/std/ownership hazards, those trips must become

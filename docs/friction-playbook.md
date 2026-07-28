@@ -603,7 +603,21 @@ elease already helps
 
 ### F-HARNESS-004 · Agent tool loops need plans + receipts
 - **symptom:** Agents invent ad-hoc shell scripts around `zrig run` with no audit trail
-- **do:** Use `zrig agent <plan> [--receipt path]`; record friction in this playbook
+- **do:** Use `zrig agent <plan> [--receipt path] [--artifacts dir]`; record friction in this playbook
 - **don't:** Embed an LLM inside zrig V2 just to get a loop
 - **promote-to-code-when:** already promoted → zrig V2 agent harness
 - **incident:** ZRIG-DOGFOOD-004
+
+### F-HARNESS-005 · Receipt stop flags must match CLI behavior
+- **symptom:** Agents assume every plan step ran after a mid-plan failure, or misread exit 1
+- **do:** Default stops early (`stopped_early: true`); use `--continue` only when intentional; treat exit 1 + receipt `ok: false` as a failed harness run, not a crash
+- **don't:** Ignore `stopped_early` / `keep_going` when debugging multi-step plans
+- **promote-to-code-when:** already promoted → receipt schema 0.0.1 + V2 docs
+- **incident:** ZRIG-DOGFOOD-006
+
+### F-HARNESS-006 · MCP scaffold is not stdio JSON-RPC yet
+- **symptom:** Agents wire a full MCP client to `zrig mcp serve` and hang / misparse
+- **do:** Use `zrig mcp list` / `mcp call` (or `zrig agent`) until docs/V3.md marks stdio ready
+- **don't:** Treat the serve stub as a live MCP server
+- **promote-to-code-when:** when stdio JSON-RPC ships → update this tip + V3 success criteria
+- **incident:** ZRIG-DOGFOOD-007

@@ -104,6 +104,10 @@ jobs:
           head -n 8 receipt.json
           test "$code" -ne 0
           grep -q '"findings": 1' receipt.json
+          grep -q '"source_revision"' receipt.json
+          grep -q '"ruleset_revision"' receipt.json
+          grep -q '"claimed": {}' receipt.json
+          grep -q '"unsafe_by_kind"' receipt.json
           "$BIN" explain --rule memory.alloc-undischarged | head -n 10
           "$BIN" explain --rule compat.volatile-std | head -n 10
           "$BIN" friction --sources | head -n 20

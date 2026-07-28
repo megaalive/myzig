@@ -69,3 +69,10 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **don't:** Treat ratchet ok as “no findings”; print still shows current debt
 - **promote-to-code-when:** already promoted → adopt/baseline/`--ratchet` (M3 V0)
 - **incident:** none yet
+
+### F-CLI-003 · Receipts bind observed facts; claimed stays empty
+- **symptom:** Agent invents `releasefast_equivalence: true` without running verify-cost
+- **do:** Use `myzig receipt`; read `observed.*`; only trust `claimed` when a witness field was actually produced
+- **don't:** Hand-edit claimed witnesses into CI artifacts
+- **promote-to-code-when:** already promoted → M4 receipt binding (verify-cost still M6)
+- **incident:** none yet

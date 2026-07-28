@@ -18,6 +18,7 @@ pub const compat = @import("compat.zig");
 pub const friction = @import("friction.zig");
 pub const baseline = @import("baseline.zig");
 pub const adopt = @import("adopt.zig");
+pub const json_out = @import("json_out.zig");
 
 pub const Certainty = schema.Certainty;
 pub const Severity = schema.Severity;
@@ -47,4 +48,5 @@ test {
     _ = friction;
     _ = baseline;
     _ = adopt;
+    _ = json_out;
 }

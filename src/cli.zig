@@ -133,13 +133,17 @@ pub fn dispatch(rio: RunIo, argv: []const []const u8) !void {
             });
             defer result.deinit(rio.allocator);
             if (want_receipt) {
-                try receipt_mod.writeJson(rio.stdout, .{
-                    .myzig_version = rio.version,
-                    .compat_adapter = compat.adapterName(),
-                    .path = path,
-                    .findings = result.diagnostics.items.len,
-                    .diagnostics = result.diagnostics.items,
-                });
+                var built = try receipt_mod.build(
+                    rio.io,
+                    rio.allocator,
+                    path,
+                    rio.version,
+                    prefer_compat,
+                    result.diagnostics.items,
+                );
+                defer built.snap.deinit(rio.allocator);
+                defer rio.allocator.free(built.source_revision);
+                try receipt_mod.writeJson(rio.stdout, built.receipt);
             } else {
                 try check_mod.writeReport(rio.stdout, result.diagnostics.items);
             }
@@ -198,13 +202,17 @@ pub fn dispatch(rio: RunIo, argv: []const []const u8) !void {
                 .prefer_compat = prefer_compat,
             });
             defer result.deinit(rio.allocator);
-            try receipt_mod.writeJson(rio.stdout, .{
-                .myzig_version = rio.version,
-                .compat_adapter = compat.adapterName(),
-                .path = path,
-                .findings = result.diagnostics.items.len,
-                .diagnostics = result.diagnostics.items,
-            });
+            var built = try receipt_mod.build(
+                rio.io,
+                rio.allocator,
+                path,
+                rio.version,
+                prefer_compat,
+                result.diagnostics.items,
+            );
+            defer built.snap.deinit(rio.allocator);
+            defer rio.allocator.free(built.source_revision);
+            try receipt_mod.writeJson(rio.stdout, built.receipt);
             if (result.diagnostics.items.len > 0) return error.Findings;
         },
         .explain => {

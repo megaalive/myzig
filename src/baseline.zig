@@ -3,6 +3,7 @@
 const std = @import("std");
 const compat = @import("compat.zig");
 const diagnostic = @import("diagnostic.zig");
+const json_out = @import("json_out.zig");
 
 pub const baseline_path = ".myzig/baseline.json";
 
@@ -95,37 +96,22 @@ pub fn writeJson(writer: *std.Io.Writer, snap: Snapshot) std.Io.Writer.Error!voi
     try writer.writeAll("{\n");
     try writer.writeAll("  \"schema_version\": \"0.0.0\",\n");
     try writer.writeAll("  \"path\": ");
-    try writeJsonString(writer, snap.path);
+    try json_out.writeString(writer, snap.path);
     try writer.writeAll(",\n");
     try writer.writeAll("  \"myzig_version\": ");
-    try writeJsonString(writer, snap.myzig_version);
+    try json_out.writeString(writer, snap.myzig_version);
     try writer.writeAll(",\n");
     try writer.print("  \"total_findings\": {d},\n", .{snap.total_findings});
     try writer.writeAll("  \"by_rule\": {\n");
     for (snap.by_rule, 0..) |rc, idx| {
         if (idx > 0) try writer.writeAll(",\n");
         try writer.writeAll("    ");
-        try writeJsonString(writer, rc.rule_id);
+        try json_out.writeString(writer, rc.rule_id);
         try writer.print(": {d}", .{rc.count});
     }
     if (snap.by_rule.len > 0) try writer.writeAll("\n");
     try writer.writeAll("  }\n");
     try writer.writeAll("}\n");
-}
-
-fn writeJsonString(writer: *std.Io.Writer, s: []const u8) std.Io.Writer.Error!void {
-    try writer.writeByte('"');
-    for (s) |c| {
-        switch (c) {
-            '"' => try writer.writeAll("\\\""),
-            '\\' => try writer.writeAll("\\\\"),
-            '\n' => try writer.writeAll("\\n"),
-            '\r' => try writer.writeAll("\\r"),
-            '\t' => try writer.writeAll("\\t"),
-            else => try writer.writeByte(c),
-        }
-    }
-    try writer.writeByte('"');
 }
 
 pub fn writeFile(io: compat.Io, gpa: std.mem.Allocator, snap: Snapshot) !void {

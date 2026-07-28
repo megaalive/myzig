@@ -1,0 +1,21 @@
+---
+description: Capture LLM/agent Zig friction into myzig incidents and smallest product fixes
+alwaysApply: true
+---
+
+# Agent dogfood for myzig
+
+You are not only implementing features. You are **dogfooding myzig as an LLM agent**.
+
+When you hit concrete friction while writing or building Zig in this workspace
+(or in dogfood apps like zrig) — compile errors from std churn, ownership
+confusion, bad CLI exits, missing explain/repair choices, CI/harness traps —
+
+1. Prefer fixing it **in myzig** (compat, rule, explain, receipt, docs) when the
+   pain will recur for future agent-built projects.
+2. Record `research/incidents/AGENT-*.md` with command/error and the landing zone.
+3. Keep changes small: obligation → diagnostic → repair choices → helper only if still needed.
+4. Do not invent ownership policy silently; use `myzig explain` repair intents.
+5. Never claim `proven` above a rule's `certainty_ceiling`.
+
+Read `docs/agent-friction.md` and `docs/agent-loop.md` when extending coach behavior.

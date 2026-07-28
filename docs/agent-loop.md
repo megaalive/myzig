@@ -24,3 +24,6 @@ myzig receipt fixtures/pass/alloc_defer_free.zig
 
 Agents must not claim `proven` above a rule's `certainty_ceiling`.
 Receipts only include `claimed` witnesses when a verify step actually ran.
+
+When the agent itself stumbles (std churn, unclear repair, CI harness), capture
+it as `AGENT-*` friction — see `docs/agent-friction.md`.

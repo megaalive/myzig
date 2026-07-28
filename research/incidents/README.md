@@ -92,6 +92,7 @@ Rules (and compat/contract improvements) are born from incidents.
 | `AGENT-CLI-001` / `002` | Clean exits; exhaustive CLI / witness hash |
 | `AGENT-STUDY-001` | Finish named external-study shortlists |
 | `AGENT-STUDY-002` | Cadangan / link-only recommendations are debt |
+| `AGENT-CI-001` | Private Actions empty-step failures = billing / spending limit |
 | `docs/LIMITS.md` | Published honest ceilings (`myzig limits`) |
 
 See `docs/agent-friction.md` and `docs/friction-playbook.md`.

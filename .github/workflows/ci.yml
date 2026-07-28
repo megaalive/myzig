@@ -5,6 +5,11 @@ on:
     branches: [master]
   pull_request:
   workflow_dispatch:
+    inputs:
+      full_matrix:
+        description: "Also run windows + macos (macos bills 10× Actions minutes)"
+        type: boolean
+        default: false
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -21,7 +26,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        # Private repos: default ubuntu only. Full OS matrix via workflow_dispatch.
+        os: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.full_matrix && '["ubuntu-latest","windows-latest","macos-latest"]' || '["ubuntu-latest"]') }}
 
     steps:
       - uses: actions/checkout@v4

@@ -56,6 +56,13 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **promote-to-code-when:** a reusable `myzig` packaging/release story exists
 - **incident:** none yet (zrig vendor pattern)
 
+### F-HARNESS-002 · Private Actions jobs fail with empty steps
+- **symptom:** All matrix jobs fail in ~10s with 0 steps / no runner; annotation mentions spending limit or failed payments
+- **do:** Fix GitHub Billing & plans (payment method / spending limit). Prefer ubuntu-only CI on private repos; macos is billed 10× — use `workflow_dispatch` full_matrix when needed
+- **don't:** Treat empty-step failures as Zig compile errors
+- **promote-to-code-when:** process / workflow only
+- **incident:** AGENT-CI-001
+
 ### F-OWN-001 · Do not invent ownership policy
 - **symptom:** Agent adds `defer free` (or transfers) without knowing intent; or claims `proven`
 - **do:** `myzig explain <file:line>` and pick a listed repair **intent**. Never claim above `certainty_ceiling`.

@@ -668,10 +668,17 @@ elease already helps
 
 ### F-HARNESS-011 · V4 ask uses mock in CI; openai_compat needs net.connect
 - **symptom:** CI hangs on missing API keys, or agents call openai_compat without caps
-- **do:** `zrig ask --provider mock` (+ `--receipt`) locally/CI; live path: `--provider openai_compat --allow net.connect` + `OPENAI_API_KEY` / `--api-key-env`. See zrig `docs/ask.md`
-- **don't:** Require outbound model HTTPS for green CI; don't bypass capability policy for tools invoked mid-turn
+- **do:** `zrig ask --provider mock` (+ `--receipt`) locally/CI; live path: `--provider openai_compat --allow net.connect` + `OPENAI_API_KEY` / `--api-key-env`. Cap is checked **before** missing-key. See zrig `docs/ask.md`
+- **don't:** Require outbound model HTTPS for green CI; don't bypass capability policy for tools invoked mid-turn; don't chase API keys first when allow is missing
 - **promote-to-code-when:** already promoted → `zrig ask` + mock CI smoke
 - **incident:** ZRIG-DOGFOOD-012
+
+### F-HARNESS-012 · zrig V5 MCP client is NDJSON + `proc.spawn`
+- **symptom:** Agents use Content-Length framing against `zrig mcp serve`, or `mcp probe` without spawn allow
+- **do:** `zrig mcp probe|remote-call --allow proc.spawn -- <server argv…>`; NDJSON like serve (`docs/V5.md`). Smoke in CI against self `mcp serve`
+- **don't:** Assume fpagnt Content-Length client talks to zrig without an adapter
+- **promote-to-code-when:** already promoted → `src/mcp_client.zig` + CI probe/remote-call
+- **incident:** ZRIG-DOGFOOD-013
 
 ### F-OWN-068 · Comment-only `catch` must not hide `};`
 - **symptom:** `expected ';' after statement` after documenting empty `catch {}` for swallow-error

@@ -22,6 +22,8 @@ pub const StatError = impl.StatError;
 pub const PathError = impl.PathError;
 pub const EnvError = impl.EnvError;
 pub const AccessError = impl.AccessError;
+pub const CopyError = impl.CopyError;
+pub const DeleteError = impl.DeleteError;
 
 pub const readFileAlloc = impl.readFileAlloc;
 pub const writeFile = impl.writeFile;
@@ -30,6 +32,8 @@ pub const freeDirList = impl.freeDirList;
 pub const statFile = impl.statFile;
 pub const createDirPath = impl.createDirPath;
 pub const access = impl.access;
+pub const copyFile = impl.copyFile;
+pub const deleteFile = impl.deleteFile;
 pub const envGet = impl.envGet;
 pub const currentPathAlloc = impl.currentPathAlloc;
 pub const unixSeconds = impl.unixSeconds;

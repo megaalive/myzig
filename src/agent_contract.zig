@@ -44,7 +44,7 @@ pub fn writeContract(writer: *std.Io.Writer, version: []const u8) std.Io.Writer.
         \\
         \\- Legacy accept: `myzig adopt` → edit `.myzig/policy.md` → `myzig baseline`
         \\- CI gate: `myzig check --ratchet <path>`
-        \\- Std insulation: `.myzig/prefer_compat` or `--prefer-compat`
+        \\- Std insulation: `.myzig/prefer_compat` or `--prefer-compat` (`F-STD-001`); prefer `compat.copyFile`/`deleteFile` (`F-STD-004`)
         \\- Local CI parity: `powershell -File scripts/ci.ps1` (matches Actions smoke)
         \\- Transfer tips: two-step field store / put / `takeOwnership*` / same-file callee free (`F-OWN-065`)
         \\- FFI wrappers: `ffi.wrapper-init-without-deinit` on `c.` files (`F-OWN-066`)

@@ -62,11 +62,20 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **don't:** Re-learn std env APIs in every dogfood tool
 - **promote-to-code-when:** already promoted → `compat.envGetOrNull`
 - **incident:** ZRIG-DOGFOOD-002
+
+### F-HARNESS-002 · Empty Actions runs usually mean billing, not Zig
 - **symptom:** All matrix jobs fail in ~10s with 0 steps / no runner; annotation mentions spending limit or failed payments
 - **do:** Fix GitHub Billing & plans (payment method / spending limit). Prefer ubuntu-only CI on private repos; macos is billed 10× — use `workflow_dispatch` full_matrix when needed. While Actions is blocked, run local parity: `powershell -File scripts/ci.ps1` (or `pwsh` if available)
 - **don't:** Treat empty-step failures as Zig compile errors
 - **promote-to-code-when:** process / workflow only
 - **incident:** AGENT-CI-001
+
+### F-STD-004 · Prefer compat for file copy/delete
+- **symptom:** Dogfood tools call raw `std.Io.Dir.copyFile` / `deleteFile` and break on the next Zig reshape
+- **do:** `myzig.compat.copyFile` / `deleteFile` (zrig: `files.copy` / `files.delete`)
+- **don't:** Re-learn Dir.copyFile argument order in every app
+- **promote-to-code-when:** already promoted → `compat.copyFile` / `deleteFile`
+- **incident:** ZRIG-DOGFOOD-009
 
 ### F-OWN-001 · Do not invent ownership policy
 - **symptom:** Agent adds `defer free` (or transfers) without knowing intent; or claims `proven`

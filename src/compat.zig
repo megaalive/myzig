@@ -24,6 +24,8 @@ pub const StatError = adapter.StatError;
 pub const PathError = adapter.PathError;
 pub const EnvError = adapter.EnvError;
 pub const AccessError = adapter.AccessError;
+pub const CopyError = adapter.CopyError;
+pub const DeleteError = adapter.DeleteError;
 
 /// Read an entire file (cwd-relative or absolute per Zig path rules).
 /// Caller owns the returned slice.
@@ -55,6 +57,16 @@ pub fn createDirPath(io: Io, path: []const u8) PathError!void {
 
 pub fn access(io: Io, path: []const u8) AccessError!void {
     return adapter.access(io, path);
+}
+
+/// Copy a file within the process cwd (dest overwritten when present).
+pub fn copyFile(io: Io, source_path: []const u8, dest_path: []const u8) CopyError!void {
+    return adapter.copyFile(io, source_path, dest_path);
+}
+
+/// Delete a file (not a directory).
+pub fn deleteFile(io: Io, path: []const u8) DeleteError!void {
+    return adapter.deleteFile(io, path);
 }
 
 /// Read one environment variable. Caller owns the returned slice.

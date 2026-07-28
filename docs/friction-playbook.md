@@ -651,3 +651,10 @@ elease already helps
 - **don't:** Only edit the user-global `~/.cursor/mcp.json` and forget the Windows extension
 - **promote-to-code-when:** playbook + checked-in `.cursor/mcp.json` example
 - **incident:** ZRIG-DOGFOOD-010
+
+### F-HARNESS-009 · MCP tool failure is `isError`, not a server crash
+- **symptom:** Host treats refused TCP / missing file as a broken MCP session, or expects process exit
+- **do:** Read `tools/call` result `isError: true` and the text payload (`ConnectionRefused`, etc.). Server stays up for the next request. Smoke with `examples/mcp-smoke.jsonl` / `scripts/mcp-smoke.ps1` including a deliberate fail (e.g. `net.tcp.probe` to a closed port)
+- **don't:** Restart `zrig mcp serve` or rewrite Client wiring because one tool returned an error
+- **promote-to-code-when:** playbook tip; optional MCP smoke assert on `isError`
+- **incident:** ZRIG-DOGFOOD-011

@@ -5,6 +5,7 @@ const catalog = @import("catalog.zig");
 const check_mod = @import("check.zig");
 const compat = @import("compat.zig");
 const explain_mod = @import("explain.zig");
+const friction_mod = @import("friction.zig");
 const receipt_mod = @import("receipt.zig");
 
 pub const Command = enum {
@@ -16,6 +17,7 @@ pub const Command = enum {
     baseline,
     rules,
     receipt,
+    friction,
     verify_cost,
     init,
     unknown,
@@ -31,6 +33,7 @@ pub const Command = enum {
         if (std.mem.eql(u8, name, "baseline")) return .baseline;
         if (std.mem.eql(u8, name, "rules")) return .rules;
         if (std.mem.eql(u8, name, "receipt")) return .receipt;
+        if (std.mem.eql(u8, name, "friction")) return .friction;
         if (std.mem.eql(u8, name, "verify-cost")) return .verify_cost;
         if (std.mem.eql(u8, name, "init")) return .init;
         return .unknown;
@@ -53,7 +56,8 @@ pub fn writeHelp(writer: *std.Io.Writer) std.Io.Writer.Error!void {
         \\  myzig <command> [args]
         \\
         \\Commands:
-        \\  check [path] [--receipt]  Run ownership checks
+        \\  check [path] [--receipt] [--prefer-compat]
+        \\                            Run ownership checks
         \\  explain <file:line>       Ownership narrative + repair choices
         \\  explain --rule <id>       Explain a catalog rule
         \\  adopt [path]              Suggest editable migration policy (stub → M3)
@@ -61,11 +65,13 @@ pub fn writeHelp(writer: *std.Io.Writer) std.Io.Writer.Error!void {
         \\  rules [--json|--markdown|--agent|--sarif]
         \\                            List rule catalog
         \\  receipt [path]            Emit thin check receipt (JSON)
+        \\  friction [--sources]      Living text playbook (update without new code)
         \\  verify-cost <case>        Leveled ReleaseFast cost witness (stub → M6)
         \\  init                      Create .myzig/ project config
         \\  help                      Show this help
         \\  version                   Show version
         \\
+        \\Exit codes: 0 ok · 1 findings/error · 2 bad usage / unknown command
         \\Identity: deterministic · honest · auditable
         \\
     );
@@ -105,9 +111,12 @@ pub fn dispatch(rio: RunIo, argv: []const []const u8) !void {
         .check => {
             var path: []const u8 = ".";
             var want_receipt = false;
+            var prefer_compat = false;
             for (rest) |a| {
                 if (std.mem.eql(u8, a, "--receipt")) {
                     want_receipt = true;
+                } else if (std.mem.eql(u8, a, "--prefer-compat")) {
+                    prefer_compat = true;
                 } else if (std.mem.startsWith(u8, a, "-")) {
                     try rio.stderr.print("myzig check: unknown flag '{s}'\n", .{a});
                     return error.Usage;
@@ -115,7 +124,10 @@ pub fn dispatch(rio: RunIo, argv: []const []const u8) !void {
                     path = a;
                 }
             }
-            var result = try check_mod.checkPath(rio.io, rio.allocator, path);
+            if (!prefer_compat) prefer_compat = check_mod.preferCompatMarker(rio.io);
+            var result = try check_mod.checkPathOptions(rio.io, rio.allocator, path, .{
+                .prefer_compat = prefer_compat,
+            });
             defer result.deinit(rio.allocator);
             if (want_receipt) {
                 try receipt_mod.writeJson(rio.stdout, .{
@@ -132,7 +144,10 @@ pub fn dispatch(rio: RunIo, argv: []const []const u8) !void {
         },
         .receipt => {
             const path = if (rest.len >= 1) rest[0] else ".";
-            var result = try check_mod.checkPath(rio.io, rio.allocator, path);
+            const prefer_compat = check_mod.preferCompatMarker(rio.io);
+            var result = try check_mod.checkPathOptions(rio.io, rio.allocator, path, .{
+                .prefer_compat = prefer_compat,
+            });
             defer result.deinit(rio.allocator);
             try receipt_mod.writeJson(rio.stdout, .{
                 .myzig_version = rio.version,
@@ -164,9 +179,45 @@ pub fn dispatch(rio: RunIo, argv: []const []const u8) !void {
                 \\Policy, baselines, and local overrides will live here.
                 \\Ordinary Zig remains first-class; this directory is optional evidence/config.
                 \\
+                \\Opt into std insulation checks by creating an empty file:
+                \\  .myzig/prefer_compat
+                \\Then `myzig check` enables `compat.volatile-std` (or pass `--prefer-compat`).
+                \\
+                \\Project-local friction tips (optional overlay for `myzig friction`):
+                \\  .myzig/friction-playbook.md
+                \\
             ;
             try compat.writeFile(rio.io, ".myzig/README.md", readme);
-            try rio.stdout.writeAll("created .myzig/\n");
+            const overlay =
+                \\# Project friction overlay
+                \\
+                \\Append project-specific agent tips here. Merged after the package
+                \\playbook when you run `myzig friction`.
+                \\
+                \\### F-OTHER-001 · example (delete or replace)
+                \\- **symptom:** …
+                \\- **do:** …
+                \\- **don't:** …
+                \\- **promote-to-code-when:** …
+                \\- **incident:** none yet
+                \\
+            ;
+            try compat.writeFile(rio.io, ".myzig/friction-playbook.md", overlay);
+            try rio.stdout.writeAll("created .myzig/ (including friction-playbook overlay)\n");
+        },
+        .friction => {
+            var show_sources = false;
+            for (rest) |a| {
+                if (std.mem.eql(u8, a, "--sources")) {
+                    show_sources = true;
+                } else {
+                    try rio.stderr.print("myzig friction: unknown flag '{s}'\n", .{a});
+                    return error.Usage;
+                }
+            }
+            var bundle = try friction_mod.load(rio.io, rio.allocator);
+            defer bundle.deinit(rio.allocator);
+            try friction_mod.write(rio.stdout, bundle, show_sources);
         },
         .unknown => {
             try rio.stderr.print("myzig: unknown command '{s}'\n\n", .{argv[0]});
@@ -183,5 +234,6 @@ test "parse known commands" {
     try std.testing.expect(Command.parse("check") == .check);
     try std.testing.expect(Command.parse("explain") == .explain);
     try std.testing.expect(Command.parse("receipt") == .receipt);
+    try std.testing.expect(Command.parse("friction") == .friction);
     try std.testing.expect(Command.parse("verify-cost") == .verify_cost);
 }

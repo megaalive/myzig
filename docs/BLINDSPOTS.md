@@ -13,6 +13,8 @@ myzig's early detectors are **local heuristics**, not whole-program proof.
 | Arenas | Arena-scoped lifetimes are not modeled beyond crude text markers |
 | Zig AST/ZIR | Token/text scan, not Zig Ast or ZIR CFG (zwanzig-class analysis) |
 | Certainty | Heuristics emit at most `likely` / `convention` |
+| Compat preference | `compat.volatile-std` is opt-in (`--prefer-compat` / `.myzig/prefer_compat`) |
+| Adapter paths | Volatile-std detector skips `compat/` sources by path heuristic |
 
 ## Product stance
 

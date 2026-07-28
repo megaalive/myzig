@@ -10,6 +10,7 @@
         "src",
         "fixtures",
         "spec",
+        "docs",
         "README.md",
     },
 }

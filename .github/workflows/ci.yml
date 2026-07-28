@@ -69,6 +69,32 @@ jobs:
             echo "expected ptrcast finding" >&2
             exit 1
           fi
+          # Opt-in compat volatile-std
+          if "$BIN" check --prefer-compat fixtures/fail/volatile_std.zig; then
+            echo "expected volatile-std finding" >&2
+            exit 1
+          fi
+          "$BIN" check fixtures/fail/volatile_std.zig
+          # Usage / unknown must be exit 2 without stack traces.
+          set +e
+          out=$("$BIN" explain 2>&1)
+          code=$?
+          set -e
+          test "$code" -eq 2
+          echo "$out" | grep -q "bad usage"
+          if echo "$out" | grep -q "error: Usage"; then
+            echo "usage still dumps error return trace" >&2
+            exit 1
+          fi
+          set +e
+          out=$("$BIN" nope 2>&1)
+          code=$?
+          set -e
+          test "$code" -eq 2
+          if echo "$out" | grep -q "error: UnknownCommand"; then
+            echo "unknown still dumps error return trace" >&2
+            exit 1
+          fi
           # Explain + receipt for the known finding.
           "$BIN" explain fixtures/fail/alloc_undischarged.zig:11 | head -n 20
           set +e
@@ -79,3 +105,6 @@ jobs:
           test "$code" -ne 0
           grep -q '"findings": 1' receipt.json
           "$BIN" explain --rule memory.alloc-undischarged | head -n 10
+          "$BIN" explain --rule compat.volatile-std | head -n 10
+          "$BIN" friction --sources | head -n 20
+          "$BIN" friction | grep -q "F-STD-001"

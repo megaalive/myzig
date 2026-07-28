@@ -1,5 +1,5 @@
 ---
-description: Capture LLM/agent Zig friction into myzig incidents and smallest product fixes
+description: Capture LLM/agent Zig friction into playbook text first, then myzig code when needed
 alwaysApply: true
 ---
 
@@ -11,11 +11,13 @@ When you hit concrete friction while writing or building Zig in this workspace
 (or in dogfood apps like zrig) — compile errors from std churn, ownership
 confusion, bad CLI exits, missing explain/repair choices, CI/harness traps —
 
-1. Prefer fixing it **in myzig** (compat, rule, explain, receipt, docs) when the
-   pain will recur for future agent-built projects.
-2. Record `research/incidents/AGENT-*.md` with command/error and the landing zone.
-3. Keep changes small: obligation → diagnostic → repair choices → helper only if still needed.
-4. Do not invent ownership policy silently; use `myzig explain` repair intents.
-5. Never claim `proven` above a rule's `certainty_ceiling`.
+1. **Update text first:** append/edit `docs/friction-playbook.md` (package) and/or
+   `.myzig/friction-playbook.md` (project). Run `myzig friction` to verify.
+2. Optionally record `research/incidents/AGENT-*.md` with command/error.
+3. Promote into myzig **code** (compat, rule, explain, receipt, CLI) only when the
+   tip repeats or is automatable — not every stumble needs a detector.
+4. Keep code changes small: obligation → diagnostic → repair choices → helper only if still needed.
+5. Do not invent ownership policy silently; use `myzig explain` repair intents.
+6. Never claim `proven` above a rule's `certainty_ceiling`.
 
-Read `docs/agent-friction.md` and `docs/agent-loop.md` when extending coach behavior.
+Read `docs/agent-friction.md`, `docs/friction-playbook.md`, and `docs/agent-loop.md`.

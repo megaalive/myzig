@@ -9,5 +9,5 @@ Rules (and compat/contract improvements) are born from incidents.
 | `MYZIG-OWN-*` | Coach self-tests / fixtures |
 | `AGENT-*` | LLM/agent authoring friction (std, ownership, CLI, harness) |
 
-Start with `MYZIG-OWN-001.md` and `AGENT-STD-001.md`.  
+Start with `MYZIG-OWN-001.md`, `AGENT-STD-001.md`, `AGENT-STD-002.md`, and `AGENT-CLI-001.md`.  
 See `docs/agent-friction.md` for the agent-authoring loop.

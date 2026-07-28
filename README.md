@@ -33,11 +33,12 @@ const data = try myzig.compat.readFileAlloc(io, gpa, "file.txt", 1024 * 1024);
 defer gpa.free(data);
 ```
 
-## CLI (stubs)
+## CLI
 
 ```text
 myzig check [path]
 myzig explain <file:line>
+myzig friction [--sources]   # living text tips; update without new Zig code
 myzig adopt [path]
 myzig baseline
 myzig rules [--json|--markdown|--agent|--sarif]

@@ -277,10 +277,47 @@ pub const seed_ptrcast_unremarked: Rule = .{
     },
 };
 
+pub const seed_volatile_std: Rule = .{
+    .id = "compat.volatile-std",
+    .category = .other,
+    .default_severity = .note,
+    .certainty_ceiling = .convention,
+    .obligation = .other,
+    .detector = .local_ast,
+    .discharges = &.{.other},
+    .message = "volatile or stale std surface; prefer myzig.compat when opted in",
+    .explanation =
+    \\Zig std fs/env/time/Io call sites churn across toolchains. Agents often
+    \\reapply remembered APIs (`std.fs.cwd`, `getEnvVarOwned`, raw `Io.Dir.cwd`).
+    \\Projects that opt into insulation should call `myzig.compat` instead.
+    \\This rule is inactive unless `myzig check --prefer-compat` or
+    \\`.myzig/prefer_compat` is present — ordinary Zig stays first-class.
+    ,
+    .repairs = &.{
+        .{
+            .tier = .canonical,
+            .intent = "use_compat",
+            .summary = "Replace with myzig.compat (readFileAlloc/writeFile/listDirAlloc/envGet/unixSeconds/…).",
+        },
+        .{
+            .tier = .suggestion,
+            .intent = "keep_raw_std",
+            .summary = "Keep raw std only if this project deliberately tracks Zig std; document why.",
+        },
+    },
+    .references = &.{
+        "fixtures/fail/volatile_std.zig",
+        "fixtures/pass/compat_facade.zig",
+        "research/incidents/AGENT-STD-001.md",
+        "research/incidents/AGENT-STD-002.md",
+    },
+};
+
 pub const seed_rules: []const Rule = &.{
     seed_alloc_undischarged,
     seed_file_undischarged,
     seed_ptrcast_unremarked,
+    seed_volatile_std,
 };
 
 test "certainty ceiling clamps proven down to likely" {

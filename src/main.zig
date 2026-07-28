@@ -15,7 +15,10 @@ pub fn main(init: std.process.Init) !void {
     var stderr_file_writer: Io.File.Writer = .init(.stderr(), io, &stderr_buffer);
     const stderr = &stderr_file_writer.interface;
 
-    const argv = if (args.len > 0) args[1..] else args[0..0];
+    var argv = if (args.len > 0) args[1..] else args[0..0];
+    // `zig build run -- -- check` and similar harnesses leave a leading `--`.
+    while (argv.len > 0 and std.mem.eql(u8, argv[0], "--")) argv = argv[1..];
+
     const rio = myzig.cli.RunIo{
         .allocator = arena,
         .io = io,
@@ -24,19 +27,30 @@ pub fn main(init: std.process.Init) !void {
         .version = myzig.version,
     };
 
+    // Expected coach outcomes exit cleanly (no error-return stack traces).
+    // Agents treat traces as crashes; findings/usage are normal control flow.
     myzig.cli.dispatch(rio, argv) catch |err| {
+        try stdout.flush();
         switch (err) {
-            error.Usage => try stderr.writeAll("myzig: bad usage (try `myzig help`)\n"),
-            error.UnknownCommand => {},
+            error.Usage => {
+                try stderr.writeAll("myzig: bad usage (try `myzig help`)\n");
+                try stderr.flush();
+                std.process.exit(2);
+            },
+            error.UnknownCommand => {
+                try stderr.flush();
+                std.process.exit(2);
+            },
             error.Findings => {
-                try stdout.flush();
                 try stderr.flush();
                 std.process.exit(1);
             },
-            else => try stderr.print("myzig: {s}\n", .{@errorName(err)}),
+            else => {
+                try stderr.print("myzig: {s}\n", .{@errorName(err)});
+                try stderr.flush();
+                std.process.exit(1);
+            },
         }
-        try stderr.flush();
-        return err;
     };
 
     try stdout.flush();

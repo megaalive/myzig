@@ -26,4 +26,5 @@ Agents must not claim `proven` above a rule's `certainty_ceiling`.
 Receipts only include `claimed` witnesses when a verify step actually ran.
 
 When the agent itself stumbles (std churn, unclear repair, CI harness), capture
-it as `AGENT-*` friction — see `docs/agent-friction.md`.
+it first in `docs/friction-playbook.md` (or `.myzig/friction-playbook.md`), then
+optionally as `AGENT-*` / code — see `docs/agent-friction.md` and `myzig friction`.

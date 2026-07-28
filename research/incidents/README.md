@@ -93,6 +93,9 @@ Rules (and compat/contract improvements) are born from incidents.
 | `EXT-STUDY-064` | Sentinel type-loss same-line `[]u8` binding |
 | `ZRIG-DOGFOOD-001` | Clean prefer-compat ratchet baseline |
 | `ZRIG-DOGFOOD-002` | `envGetOrNull` for optional env vars |
+| `ZRIG-DOGFOOD-003` | Expected zrig errors exit without stack traces |
+| `ZRIG-DOGFOOD-004` | V2 agent tool-loop + run receipts |
+| `ZRIG-DOGFOOD-005` | Prove `net.http.get` on loopback first |
 | `AGENT-STD-001` / `002` | std churn ? compat + volatile rule |
 | `AGENT-CLI-001` / `002` | Clean exits; exhaustive CLI / witness hash |
 | `AGENT-STUDY-001` | Finish named external-study shortlists |

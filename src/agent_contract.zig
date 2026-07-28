@@ -49,6 +49,7 @@ pub fn writeContract(writer: *std.Io.Writer, version: []const u8) std.Io.Writer.
         \\- Transfer tips: two-step field store / put / `takeOwnership*` / same-file callee free (`F-OWN-065`)
         \\- FFI wrappers: `ffi.wrapper-init-without-deinit` on `c.` files (`F-OWN-066`)
         \\- Sentinel types: keep `[:0]u8` from `dupeZ` / `allocSentinel` (`F-OWN-067`)
+        \\- Dogfood apps (zrig): expected denials exit cleanly (`F-CLI-007`); agent loops use plans+receipts (`F-HARNESS-004`)
         \\
     );
 }
@@ -91,4 +92,5 @@ test "contract mentions loop and transfer/FFI tips" {
     try std.testing.expect(std.mem.indexOf(u8, buf[0..w.end], "F-OWN-065") != null);
     try std.testing.expect(std.mem.indexOf(u8, buf[0..w.end], "F-OWN-066") != null);
     try std.testing.expect(std.mem.indexOf(u8, buf[0..w.end], "F-OWN-067") != null);
+    try std.testing.expect(std.mem.indexOf(u8, buf[0..w.end], "F-CLI-007") != null);
 }

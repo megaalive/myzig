@@ -586,3 +586,24 @@ elease already helps
 - **don't:** Rely on inferred `[]u8` after a sentinel acquire
 - **promote-to-code-when:** already promoted → `memory.sentinel-type-loss` (same-line only)
 - **incident:** EXT-STUDY-064
+
+### F-CLI-007 · Expected zrig outcomes are not crashes
+- **symptom:** `CapabilityDenied` / `Usage` dumps Zig error-return traces; agents retry randomly
+- **do:** Treat exits like myzig: `0` ok, `1` denied/failed step, `2` usage/unknown. Grant caps via `.zrig/capabilities` / `--allow` / plan `allow`
+- **don't:** Assume the binary is broken when exit is 1 with a clear denial line
+- **promote-to-code-when:** already promoted → zrig `std.process.exit` in `main` (ZRIG-DOGFOOD-003)
+- **incident:** ZRIG-DOGFOOD-003
+
+### F-HARNESS-003 · Prove net.http.get on loopback first
+- **symptom:** External URL timeouts look like a broken HTTP tool
+- **do:** `--allow net.connect`, smoke `http://127.0.0.1:<port>/`, then try outbound
+- **don't:** Rewrite Client wiring before proving loopback
+- **promote-to-code-when:** playbook (environment variance)
+- **incident:** ZRIG-DOGFOOD-005
+
+### F-HARNESS-004 · Agent tool loops need plans + receipts
+- **symptom:** Agents invent ad-hoc shell scripts around `zrig run` with no audit trail
+- **do:** Use `zrig agent <plan> [--receipt path]`; record friction in this playbook
+- **don't:** Embed an LLM inside zrig V2 just to get a loop
+- **promote-to-code-when:** already promoted → zrig V2 agent harness
+- **incident:** ZRIG-DOGFOOD-004

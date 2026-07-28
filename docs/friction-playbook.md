@@ -370,3 +370,45 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **don't:** Promote XML-parser patterns into seed detectors
 - **promote-to-code-when:** study boundary
 - **incident:** EXT-STUDY-036
+
+### F-OWN-041 · Physical frames ≠ Zig Allocator
+- **symptom:** `allocator.free` on a phys page address, or `pmm.free` on a heap pointer
+- **do:** Keep PMM/buddy/stack APIs separate from `std.mem.Allocator`; free with the layer that allocated
+- **don't:** Treat multiboot/mmap frame lists as GPA
+- **promote-to-code-when:** playbook
+- **incident:** EXT-STUDY-037
+
+### F-OWN-042 · Free at the right memory layer
+- **symptom:** heap-free after unmap, or leaking frames when VMM tears down
+- **do:** PMM owns frames; VMM owns mappings; heap owns bytes inside mapped regions
+- **don't:** Use the HV heap as anonymous guest RAM
+- **promote-to-code-when:** playbook
+- **incident:** EXT-STUDY-038
+
+### F-OWN-043 · Seal boottime heaps before runtime
+- **symptom:** freeing boot FBA pointers with the runtime allocator after `boottime_allocator = null`
+- **do:** Boot FBA → hand leftover to lasting heap → seal; use `PhaseAllocator` when phases are explicit
+- **don't:** Keep using boottime tokens after seal
+- **promote-to-code-when:** `boottime_allocator` already arena-discharged
+- **incident:** EXT-STUDY-039
+
+### F-OWN-044 · Bump RAM may never free
+- **symptom:** inventing `free` for a linker `__free_ram` bump allocator
+- **do:** Treat bump pages as immortal (or reboot-scoped); size the RAM window honestly
+- **don't:** Expect GPA leak checks on freestanding bump heaps
+- **promote-to-code-when:** playbook
+- **incident:** EXT-STUDY-040
+
+### F-OWN-045 · Unmap only frees owned frames
+- **symptom:** `pmem.free` on every unmap, including identity/bootloader pages
+- **do:** Honor PTE ownership / refcount / COW flags before returning frames to PMM
+- **don't:** Assume every mapped phys page was kernel-allocated
+- **promote-to-code-when:** playbook
+- **incident:** EXT-STUDY-041
+
+### F-OWN-046 · Guest quotas isolate hypervisor RAM
+- **symptom:** guest pages allocated without quota, or HV control objects from guest pools
+- **do:** Track per-guest RAM/vCPU quotas; keep HV heap for hypervisor structures
+- **don't:** Collapse guest GPA space into the HV free-list
+- **promote-to-code-when:** playbook
+- **incident:** EXT-STUDY-042

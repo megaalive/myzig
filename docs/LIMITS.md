@@ -51,15 +51,16 @@ Also see `docs/BLINDSPOTS.md` (analyzer detail) and `docs/friction-playbook.md`.
 - Exact assignment retarget `out = next` joins the alias closure (`AZIG-OWN-007`).
 - Field assignment `self.x = try …alloc/dupe/create` counts as store transfer (`EXT-STUDY-007`).
 - Indexed store `into[i] = try …dupe/alloc` counts as transfer into a caller buffer (`EXT-STUDY-020`).
-- Arena-token acquires (`analyser.arena`, `arena_allocator`, `scratch_allocator`, …) count as transferred (`EXT-STUDY-008`, `EXT-STUDY-024`).
+- Arena-token acquires (`analyser.arena`, `arena_allocator`, `scratch_allocator`, `boottime_allocator`, …) count as transferred (`EXT-STUDY-008`, `EXT-STUDY-024`, `EXT-STUDY-039`).
 - `.create(` is an acquire only for single-argument calls (`allocator.create(T)`) (`EXT-STUDY-009`).
 - Empty `defer {}` / `errdefer {}` (whitespace/comment-only) are convention notes (`EXT-STUDY-001`).
 - Hidden `page_allocator` / `c_allocator` use on alloc/free lines is a convention note (`EXT-STUDY-004`).
 - Empty `catch {}` / `catch unreachable` are convention notes; comment-only catch and documented unreachable are allowed (`EXT-STUDY-005`, `EXT-STUDY-009`).
 - Inline suppressions: `// myzig-disable-next-line` / `myzig-disable-current-line` [`rule_id…`] (`EXT-STUDY-005`).
 - `.init(` bindings without `.deinit` / `.destroy` / `.unload` / `.shutdown` / return transfer are convention notes (`EXT-STUDY-012`, `EXT-STUDY-023`, `EXT-STUDY-025`, `EXT-STUDY-031`); `return .{ .f = name }` transfers (`EXT-STUDY-020`).
-- Optional `myzig.compat.PhaseAllocator` seals alloc capability after startup (`EXT-STUDY-010`).
+- Optional `myzig.compat.PhaseAllocator` seals alloc capability after startup (`EXT-STUDY-010`); boottime→runtime seal is the kernel sibling (`EXT-STUDY-039`).
 - Post-Zig / foreign runtimes are allocator-*shape* references only (`EXT-STUDY-028`); borrowed-arena and single-buffer scratch tips stay playbook (`EXT-STUDY-029`, `EXT-STUDY-030`).
+- Kernel PMM/VMM/guest-quota patterns stay playbook (`EXT-STUDY-037`..`042`).
 
 ## Dogfood snapshot
 

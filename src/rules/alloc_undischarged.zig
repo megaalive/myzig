@@ -159,6 +159,8 @@ fn isArenaBackedAcquireLine(line: []const u8) bool {
         "scratch_allocator",
         "scratch.",
         ".scratch.",
+        "boottime_allocator",
+        "boot_allocator",
     };
     var has_arena = false;
     for (markers) |m| {
@@ -888,4 +890,15 @@ test "leaky local alloc is flagged; defer free and return-transfer are not" {
     defer unmap_diags.deinit(gpa);
     try analyzeSource("unmap.zig", unmap_src, &unmap_diags, gpa);
     try std.testing.expect(unmap_diags.items.len == 0);
+
+    const boottime_src =
+        \\pub fn early(boot: anytype) !void {
+        \\    const tmp = try boot.boottime_allocator.dupe(u8, "ok");
+        \\    _ = tmp;
+        \\}
+    ;
+    var boottime_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer boottime_diags.deinit(gpa);
+    try analyzeSource("boottime.zig", boottime_src, &boottime_diags, gpa);
+    try std.testing.expect(boottime_diags.items.len == 0);
 }

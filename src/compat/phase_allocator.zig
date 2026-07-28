@@ -3,6 +3,9 @@
 //! Startup may allocate; after seal, accidental runtime alloc asserts;
 //! teardown allows free only. Use when a program has distinct capability
 //! phases — not a mandate that all apps be static-only.
+//!
+//! Kernel sibling: boottime FixedBufferAllocator sealed before the lasting
+//! runtime heap takes over (`EXT-STUDY-039`).
 
 const std = @import("std");
 const assert = std.debug.assert;

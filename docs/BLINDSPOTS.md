@@ -52,6 +52,12 @@ myzig's early detectors are **local heuristics**, not whole-program proof.
 | Context/Surface | Borrowed surface + same-alloc lifetime playbook (`EXT-STUDY-034`) |
 | Memory pools | Pool vs GPA destroy not distinguished (`EXT-STUDY-035`) |
 | Binding gens | Generators are naming references only (`EXT-STUDY-036`) |
+| Phys frames | PMM/buddy/stack APIs not modeled as Allocator (`EXT-STUDY-037`) |
+| Memory layers | PMM/VMM/heap free graphs are playbook (`EXT-STUDY-038`) |
+| Boottime heaps | `boottime_allocator` token only; seal not proven (`EXT-STUDY-039`) |
+| Bump RAM | Linker bump allocators invisible to alloc needles (`EXT-STUDY-040`) |
+| PTE ownership | Ownership/refcount flags not parsed (`EXT-STUDY-041`) |
+| Guest isolation | Hypervisor quotas playbook only (`EXT-STUDY-042`) |
 
 ## Product stance
 

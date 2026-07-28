@@ -60,6 +60,12 @@ Rules (and compat/contract improvements) are born from incidents.
 | `EXT-STUDY-034` | Managed Context vs borrowed Surface |
 | `EXT-STUDY-035` | MemoryPool return + app init/deinit frames |
 | `EXT-STUDY-036` | Binding generators → Destroy* naming only |
+| `EXT-STUDY-037` | Physical frame allocators ≠ Zig Allocator |
+| `EXT-STUDY-038` | Layered PMM → VMM → kernel heap |
+| `EXT-STUDY-039` | Boottime FBA sealed before runtime heap |
+| `EXT-STUDY-040` | Bump linker RAM with no free |
+| `EXT-STUDY-041` | Page-table ownership bits / refcount |
+| `EXT-STUDY-042` | Guest quotas vs hypervisor heap |
 | `ZRIG-DOGFOOD-001` | Clean prefer-compat ratchet baseline |
 | `AGENT-STD-001` / `002` | std churn → compat + volatile rule |
 | `AGENT-CLI-001` / `002` | Clean exits; exhaustive CLI / witness hash |

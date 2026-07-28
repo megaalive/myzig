@@ -1,0 +1,28 @@
+.{
+    .schema_version = "0.0.0",
+    .rules = .{
+        .{
+            .id = "memory.alloc-undischarged",
+            .category = "allocator",
+            .default_severity = "warning",
+            .certainty_ceiling = "likely",
+            .obligation = "memory_must_release_or_transfer",
+            .detector = "local_ast",
+            .discharges = .{
+                "free",
+                "destroy",
+                "deinit",
+                "defer_free",
+                "errdefer_free",
+                "transfer_return",
+                "transfer_out_param",
+                "arena_scoped",
+            },
+            .message = "allocated memory may leave the function without release or transfer",
+            .fixtures = .{
+                .pass = "fixtures/pass/alloc_defer_free.zig",
+                .fail = "fixtures/fail/alloc_undischarged.zig",
+            },
+        },
+    },
+}

@@ -1,0 +1,14 @@
+﻿# Local planning only — not part of the public project surface.
+.planning/
+
+.zig-cache/
+zig-cache/
+zig-out/
+
+# Local editor / OS noise
+.vs/
+.vscode/
+*.user
+*.suo
+Thumbs.db
+Desktop.ini

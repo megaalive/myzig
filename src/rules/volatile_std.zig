@@ -31,6 +31,10 @@ pub fn analyzeSource(
     var search_from: usize = 0;
     while (search_from < source.len) {
         const hit = scan.nextNeedle(source, search_from, &needles) orelse break;
+        if (scan.isInLineComment(source, hit)) {
+            search_from = hit + 1;
+            continue;
+        }
         try out.append(gpa, diagnostic.Diagnostic.fromRule(
             schema.seed_volatile_std,
             .convention,

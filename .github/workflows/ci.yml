@@ -136,3 +136,5 @@ jobs:
           "$BIN" receipt fixtures/pass/alloc_defer_free.zig > receipt-cost.json
           grep -q '"verify_cost"' receipt-cost.json
           grep -q 'id-passthrough' receipt-cost.json
+          "$BIN" limits | grep -q "Certainty"
+          "$BIN" limits --sources | grep -q "docs/LIMITS.md"

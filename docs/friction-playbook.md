@@ -83,3 +83,10 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **don't:** Silent casts; mismatched `permit(bitcast)` on `@ptrCast`
 - **promote-to-code-when:** already promoted → permit kinds in detector
 - **incident:** none yet
+
+### F-CLI-004 · Zig 0.17 compile nits while shipping coach features
+- **symptom:** `local variable is never mutated` (`var`→`const`); `unreachable else prong` after all CLI commands are implemented; crypto hash import path unclear on toolchain bump
+- **do:** Prefer `const` by default; drop `else` when `Command` switch is exhaustive; use `std.hash.Wyhash` (or similar stable hash) for witnesses unless crypto is required
+- **don't:** Leave stub `else => stubMessage` after real commands land — breaks the exe build even if `zig build test` looked green
+- **promote-to-code-when:** already noted; re-hit → add CLI exhaustiveness test
+- **incident:** AGENT-CLI-002

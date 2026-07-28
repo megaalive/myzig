@@ -26,6 +26,10 @@ pub fn analyzeSource(
         while (search_from < body.len) {
             const hit = scan.nextNeedle(body, search_from, &acquire_needles) orelse break;
             const abs_index = func.start + hit;
+            if (scan.isInLineComment(source, abs_index)) {
+                search_from = hit + 1;
+                continue;
+            }
             if (!has_defer_close and !has_close_call) {
                 try out.append(gpa, diagnostic.Diagnostic.fromRule(
                     schema.seed_file_undischarged,

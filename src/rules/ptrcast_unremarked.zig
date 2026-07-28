@@ -36,6 +36,10 @@ pub fn analyzeSource(
         }
         const hit = best_idx orelse break;
         const n = best_needle.?;
+        if (scan.isInLineComment(source, hit)) {
+            search_from = hit + 1;
+            continue;
+        }
         const line = scan.lineSlice(source, hit);
         const parsed = permit.parseLine(line, n.kind);
         if (!parsed.ok) {

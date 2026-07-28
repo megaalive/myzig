@@ -78,6 +78,13 @@ pub fn columnNumber(source: []const u8, index: usize) u32 {
     return col;
 }
 
+/// True when `index` sits on a line after a `//` comment marker (text-scan FP guard).
+pub fn isInLineComment(source: []const u8, index: usize) bool {
+    const line_start: usize = if (std.mem.lastIndexOfScalar(u8, source[0..index], '\n')) |nl| nl + 1 else 0;
+    if (index < line_start) return false;
+    return std.mem.indexOf(u8, source[line_start..index], "//") != null;
+}
+
 pub fn deferLineMentions(body: []const u8, words: []const []const u8) bool {
     var i: usize = 0;
     while (i < body.len) : (i += 1) {

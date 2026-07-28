@@ -25,6 +25,10 @@ pub fn analyzeSource(
         while (search_from < body.len) {
             const hit = scan.nextNeedle(body, search_from, &acquire_needles) orelse break;
             const abs_index = func.start + hit;
+            if (scan.isInLineComment(source, abs_index)) {
+                search_from = hit + 1;
+                continue;
+            }
             const line_slice = scan.lineSlice(source, abs_index);
             const discharged = isReturnTransferLine(line_slice) or has_defer_discharge;
             if (!discharged) {
@@ -87,4 +91,14 @@ test "leaky local alloc is flagged; defer free and return-transfer are not" {
     defer transfer_diags.deinit(gpa);
     try analyzeSource("transfer.zig", transfer_src, &transfer_diags, gpa);
     try std.testing.expect(transfer_diags.items.len == 0);
+
+    const comment_src =
+        \\pub fn documented() void {
+        \\    // example only: allocator.alloc(u8, 1) would leak without defer
+        \\}
+    ;
+    var comment_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer comment_diags.deinit(gpa);
+    try analyzeSource("comment.zig", comment_src, &comment_diags, gpa);
+    try std.testing.expect(comment_diags.items.len == 0);
 }

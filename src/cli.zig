@@ -10,6 +10,7 @@ const receipt_mod = @import("receipt.zig");
 const baseline_mod = @import("baseline.zig");
 const adopt_mod = @import("adopt.zig");
 const verify_cost_mod = @import("verify_cost.zig");
+const limits_mod = @import("limits.zig");
 
 pub const Command = enum {
     help,
@@ -21,6 +22,7 @@ pub const Command = enum {
     rules,
     receipt,
     friction,
+    limits,
     verify_cost,
     init,
     unknown,
@@ -37,6 +39,7 @@ pub const Command = enum {
         if (std.mem.eql(u8, name, "rules")) return .rules;
         if (std.mem.eql(u8, name, "receipt")) return .receipt;
         if (std.mem.eql(u8, name, "friction")) return .friction;
+        if (std.mem.eql(u8, name, "limits")) return .limits;
         if (std.mem.eql(u8, name, "verify-cost")) return .verify_cost;
         if (std.mem.eql(u8, name, "init")) return .init;
         return .unknown;
@@ -71,6 +74,7 @@ pub fn writeHelp(writer: *std.Io.Writer) std.Io.Writer.Error!void {
         \\                            List rule catalog
         \\  receipt [path]            Emit thin check receipt (JSON)
         \\  friction [--sources]      Living text playbook (update without new code)
+        \\  limits [--sources]        Published honest detector ceilings
         \\  verify-cost <case|--list> Leveled cost witness (claimed only after run)
         \\  init                      Create .myzig/ project config
         \\  help                      Show this help
@@ -303,6 +307,20 @@ pub fn dispatch(rio: RunIo, argv: []const []const u8) !void {
             defer bundle.deinit(rio.allocator);
             try friction_mod.write(rio.stdout, bundle, show_sources);
         },
+        .limits => {
+            var show_sources = false;
+            for (rest) |a| {
+                if (std.mem.eql(u8, a, "--sources")) {
+                    show_sources = true;
+                } else {
+                    try rio.stderr.print("myzig limits: unknown flag '{s}'\n", .{a});
+                    return error.Usage;
+                }
+            }
+            var bundle = try limits_mod.load(rio.io, rio.allocator);
+            defer bundle.deinit(rio.allocator);
+            try limits_mod.write(rio.stdout, bundle, show_sources);
+        },
         .verify_cost => {
             if (rest.len < 1) return error.Usage;
             if (std.mem.eql(u8, rest[0], "--list") or std.mem.eql(u8, rest[0], "list")) {
@@ -334,5 +352,6 @@ test "parse known commands" {
     try std.testing.expect(Command.parse("explain") == .explain);
     try std.testing.expect(Command.parse("receipt") == .receipt);
     try std.testing.expect(Command.parse("friction") == .friction);
+    try std.testing.expect(Command.parse("limits") == .limits);
     try std.testing.expect(Command.parse("verify-cost") == .verify_cost);
 }

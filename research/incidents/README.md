@@ -4,10 +4,20 @@ Rules (and compat/contract improvements) are born from incidents.
 
 | Prefix | Channel |
 |--------|---------|
-| `AZIG-OWN-*` | Legacy product defects (azig) |
-| `ZRIG-OWN-*` | Greenfield dogfood (zrig) |
+| `AZIG-OWN-*` | Legacy product defects / patterns (azig) |
+| `ZRIG-OWN-*` / `ZRIG-DOGFOOD-*` | Greenfield dogfood (zrig) |
 | `MYZIG-OWN-*` | Coach self-tests / fixtures |
 | `AGENT-*` | LLM/agent authoring friction (std, ownership, CLI, harness) |
 
-Start with `MYZIG-OWN-001.md`, `AGENT-STD-001.md`, `AGENT-STD-002.md`, and `AGENT-CLI-001.md`.  
-See `docs/agent-friction.md` for the agent-authoring loop.
+## Seed set (M7)
+
+| ID | Role |
+|----|------|
+| `MYZIG-OWN-001` | Fixture alloc undischarged loop |
+| `AZIG-OWN-001` | Arena + coarse defer discharge limits |
+| `ZRIG-DOGFOOD-001` | Clean prefer-compat ratchet baseline |
+| `AGENT-STD-001` / `002` | std churn → compat + volatile rule |
+| `AGENT-CLI-001` / `002` | Clean exits; exhaustive CLI / witness hash |
+| `docs/LIMITS.md` | Published honest ceilings (`myzig limits`) |
+
+See `docs/agent-friction.md` and `docs/friction-playbook.md`.

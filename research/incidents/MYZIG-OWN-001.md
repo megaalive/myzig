@@ -50,5 +50,5 @@ or transfer ownership by returning `[]u8` instead of `usize`.
 
 ## Azig follow-up
 
-Promote a concrete azig SSE/arena incident here when extracted (`AZIG-OWN-*`).
-For now this fixture-backed incident proves the M1 loop end-to-end.
+See `AZIG-OWN-001` for arena + coarse defer discharge limits extracted from azig
+HTTP/runtime patterns. This fixture incident remains the M1 loop proof.

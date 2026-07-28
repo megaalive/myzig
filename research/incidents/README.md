@@ -1,17 +1,6 @@
-# Incident lab
+﻿# Incident lab
 
-Azig (and other dogfood targets) are the **dataset**, not a checkbox demo.
+Rules are born from incidents. Each file under this directory records a concrete
+ownership failure, the human/agent repair story, and the candidate rule.
 
-Each incident should eventually record:
-
-- incident ID
-- original code
-- why it was wrong
-- compiler / runtime symptom
-- human fix
-- agent fix attempts
-- canonical repair
-- candidate rule
-- false-positive risk
-
-Rules are born from incidents. This directory starts empty on purpose.
+Start with `MYZIG-OWN-001.md`. Azig dogfood incidents should use `AZIG-OWN-*`.

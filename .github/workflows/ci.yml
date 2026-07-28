@@ -97,6 +97,8 @@ jobs:
           fi
           # Explain + receipt for the known finding.
           "$BIN" explain fixtures/fail/alloc_undischarged.zig:11 | head -n 20
+          "$BIN" explain fixtures/fail/alloc_undischarged.zig:11 --json | grep -q '"repair_choices"'
+          "$BIN" explain --rule memory.alloc-undischarged --agent | grep -q "Repair intents"
           set +e
           "$BIN" receipt fixtures/fail/alloc_undischarged.zig > receipt.json
           code=$?

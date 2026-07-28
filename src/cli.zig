@@ -60,8 +60,10 @@ pub fn writeHelp(writer: *std.Io.Writer) std.Io.Writer.Error!void {
         \\Commands:
         \\  check [path] [--receipt] [--prefer-compat] [--ratchet]
         \\                            Run ownership checks (optional debt ratchet)
-        \\  explain <file:line>       Ownership narrative + repair choices
-        \\  explain --rule <id>       Explain a catalog rule
+        \\  explain <file:line> [--json|--agent]
+        \\                            Ownership narrative + repair choices
+        \\  explain --rule <id> [--json|--agent]
+        \\                            Explain a catalog rule
         \\  adopt [path]              Suggest editable policy + baseline if missing
         \\  baseline [path]           Snapshot current findings for ratchet
         \\  rules [--json|--markdown|--agent|--sarif]
@@ -216,17 +218,38 @@ pub fn dispatch(rio: RunIo, argv: []const []const u8) !void {
             if (result.diagnostics.items.len > 0) return error.Findings;
         },
         .explain => {
-            if (rest.len >= 2 and std.mem.eql(u8, rest[0], "--rule")) {
-                const rule = explain_mod.findRule(rest[1]) orelse {
-                    try rio.stderr.print("myzig explain: unknown rule '{s}'\n", .{rest[1]});
+            var format: explain_mod.Format = .text;
+            var rule_id: ?[]const u8 = null;
+            var target_spec: ?[]const u8 = null;
+            var i: usize = 0;
+            while (i < rest.len) : (i += 1) {
+                const a = rest[i];
+                if (std.mem.eql(u8, a, "--rule")) {
+                    i += 1;
+                    if (i >= rest.len) return error.Usage;
+                    rule_id = rest[i];
+                } else if (explain_mod.Format.parse(a)) |f| {
+                    format = f;
+                } else if (std.mem.startsWith(u8, a, "-")) {
+                    try rio.stderr.print("myzig explain: unknown flag '{s}'\n", .{a});
+                    return error.Usage;
+                } else if (target_spec == null) {
+                    target_spec = a;
+                } else {
+                    return error.Usage;
+                }
+            }
+            if (rule_id) |id| {
+                const rule = explain_mod.findRule(id) orelse {
+                    try rio.stderr.print("myzig explain: unknown rule '{s}'\n", .{id});
                     return error.Usage;
                 };
-                try explain_mod.writeRuleExplain(rio.stdout, rule);
+                try explain_mod.explainRule(rule, rio.stdout, format);
                 return;
             }
-            if (rest.len < 1) return error.Usage;
-            const target = try explain_mod.parseTarget(rest[0]);
-            try explain_mod.explainLocation(rio.io, rio.allocator, target, rio.stdout);
+            const spec = target_spec orelse return error.Usage;
+            const target = try explain_mod.parseTarget(spec);
+            try explain_mod.explainLocation(rio.io, rio.allocator, target, rio.stdout, format);
         },
         .init => {
             try compat.createDirPath(rio.io, ".myzig");

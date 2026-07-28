@@ -25,6 +25,9 @@ myzig receipt fixtures/pass/alloc_defer_free.zig
 Agents must not claim `proven` above a rule's `certainty_ceiling`.
 Receipts only include `claimed` witnesses when a verify step actually ran.
 
+Structured repairs: `myzig explain <file:line> --json` (or `--agent`) lists
+`repair_choices` with intents — pick one; do not invent ownership policy.
+
 When the agent itself stumbles (std churn, unclear repair, CI harness), capture
 it first in `docs/friction-playbook.md` (or `.myzig/friction-playbook.md`), then
 optionally as `AGENT-*` / code — see `docs/agent-friction.md` and `myzig friction`.

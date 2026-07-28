@@ -37,7 +37,8 @@ defer gpa.free(data);
 
 ```text
 myzig check [path] [--ratchet]
-myzig explain <file:line>
+myzig explain <file:line> [--json|--agent]
+myzig explain --rule <id> [--json|--agent]
 myzig adopt [path]           # editable .myzig/policy.md + baseline if missing
 myzig baseline [path]        # snapshot findings for ratchet
 myzig friction [--sources]   # living text tips; update without new Zig code

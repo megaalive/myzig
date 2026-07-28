@@ -106,7 +106,8 @@ pub fn writeAgent(writer: *std.Io.Writer) std.Io.Writer.Error!void {
     try writer.writeAll("Never claim `proven` above a rule's certainty_ceiling.\n");
     try writer.writeAll("CLI exits: 0=ok, 1=findings/error, 2=usage — no stack traces for those.\n");
     try writer.writeAll("For std fs/env/time insulation, prefer `myzig.compat` and `check --prefer-compat`.\n");
-    try writer.writeAll("Living tips (update as text, not always as code): run `myzig friction`.\n\n");
+    try writer.writeAll("Living tips (update as text, not always as code): run `myzig friction`.\n");
+    try writer.writeAll("Repair cards: `myzig explain <file:line> --json` or `--agent`.\n\n");
     for (schema.seed_rules) |rule| {
         try writer.print("## {s}\n", .{rule.id});
         try writer.print("ceiling: {s}\n", .{rule.certainty_ceiling.asText()});

@@ -113,11 +113,11 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **incident:** none yet
 
 ### F-OWN-003 · Collection fills transfer ownership
-- **symptom:** `try list.append(try allocator.dupe(...))` flagged as undischarged
-- **do:** Prefer same-line append+acquire (myzig treats as transfer). Free list items in `deinit` / explicit loops.
-- **don't:** Add a redundant `defer free` on a pointer that was appended into a owning list
-- **promote-to-code-when:** already promoted → same-line append transfer (`AZIG-OWN-004`)
-- **incident:** AZIG-OWN-004
+- **symptom:** `try list.append(try allocator.dupe(...))` or `try map.put(k, try dupe(...))` flagged as undischarged
+- **do:** Prefer append/put/insert + acquire (same-line or binding in args). Free collection items in `deinit` / explicit loops.
+- **don't:** Add a redundant `defer free` on a pointer that was moved into an owning collection
+- **promote-to-code-when:** already promoted → append/put/insert transfer (`AZIG-OWN-004`, `MYZIG-OWN-003`)
+- **incident:** AZIG-OWN-004 / MYZIG-OWN-003
 
 ### F-OWN-004 · Permits may sit on the adjacent line
 - **symptom:** `@ptrCast` flagged even with `// myzig.permit(ptrcast): …` on the previous line
@@ -162,11 +162,11 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **incident:** EXT-STUDY-005
 
 ### F-OWN-010 · Store into owner fields
-- **symptom:** `self.buf = try allocator.dupe(...)` flagged as undischarged
+- **symptom:** `self.buf = try allocator.dupe(...)` or two-step `const x = try dupe; self.buf = x` flagged as undischarged
 - **do:** Prefer field assignment into the owning struct; free in `deinit`
 - **don't:** Add a local `defer free` on a pointer that was stored into `self`
-- **promote-to-code-when:** already promoted → field-store transfer
-- **incident:** EXT-STUDY-007
+- **promote-to-code-when:** already promoted → field-store transfer (same-line + binding)
+- **incident:** EXT-STUDY-007 / MYZIG-OWN-003
 
 ### F-OWN-011 · Arena scratch does not need local free
 - **symptom:** `try analyser.arena.dupe(...)` flagged even though arena owns it
@@ -438,7 +438,8 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **symptom:** allocator.free on a still-pooled buffer, or leaking after grow promotes out of the pool
 - **do:** pool.release when pooled; after promotion free with the allocator only
 - **don't:** Assume resize keeps the buffer in the pool
-- **promote-to-code-when:** playbook; elease already helps
+- **promote-to-code-when:** playbook; 
+elease already helps
 - **incident:** EXT-STUDY-045
 
 ### F-OWN-050 · Sockets close; network may need global init

@@ -13,6 +13,7 @@ Ownership moves into a longer-lived owner field; local free would be wrong.
 ## myzig promotion
 
 - Same-line field assignment with an acquire on the RHS counts as transfer
+- Two-step `const x = try …; self.field = x` also transfers (`MYZIG-OWN-003`)
 - Certainty stays `likely`
 
 ## Boundary

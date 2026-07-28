@@ -9,7 +9,7 @@ myzig's early detectors are **local heuristics**, not whole-program proof.
 | Area | Limitation |
 |------|------------|
 | Path sensitivity | Conditional free/close may be treated as function-wide discharge |
-| Transfers | Return / out-param / indexed-out / rename / retarget / field-store / `return .{ fields }` / append / arena-backed; wrapper / callee frees still weak |
+| Transfers | Return / out-param / indexed-out / rename / retarget / field-store (same-line + two-step binding) / `return .{ fields }` / append / put / insert / arena-backed; wrapper / callee frees still weak |
 | Aliasing | Exact RHS rename closure (bounded) is followed for transfer/free; wrapper APIs stay invisible |
 | Local free | `.free`/`.destroy`/`.release`/`.unload`/`.dealloc`/`.unmap`/`.cancel`/`.close`(name) and `name.deinit`/`.destroy`/`.release`/`.unload`/`.shutdown`/`.dealloc`/`.unmap`/`.cancel`/`.close(` discharge that binding; coarse function-wide `defer …` discharge remains for arena-style sites |
 | Permits | `@ptrCast`/`@alignCast` accept permit/safety on adjacent lines (prev/curr/next) |

@@ -16,6 +16,7 @@ Rules (and compat/contract improvements) are born from incidents.
 |----|------|
 | `MYZIG-OWN-001` | Fixture alloc undischarged loop |
 | `MYZIG-OWN-002` | Explicit free without defer |
+| `MYZIG-OWN-003` | Two-step field store + collection put/insert transfers |
 | `AZIG-OWN-001` | Arena + coarse defer discharge limits |
 | `AZIG-OWN-002` | Out-param / one-hop rename transfers |
 | `AZIG-OWN-003` | `allocPrint` / related acquires were invisible |

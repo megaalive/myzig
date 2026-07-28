@@ -111,17 +111,26 @@ fn isIndexedOutStoreTransferLine(line: []const u8) bool {
     return false;
 }
 
+const collection_transfer_markers = [_][]const u8{
+    ".append(",
+    ".appendSlice(",
+    ".put(",
+    ".putNoClobber(",
+    ".putAssumeCapacity(",
+    ".insert(",
+};
+
 fn isCollectionTransferLine(line: []const u8) bool {
-    // `try list.append(try allocator.dupe(...))` — ownership moves into the collection.
-    const markers = [_][]const u8{ ".append(", ".appendSlice(" };
-    var has_append = false;
-    for (markers) |m| {
+    // `try list.append(try allocator.dupe(...))` / `try map.put(k, try dupe(...))`
+    // — ownership moves into the collection.
+    var has_collection = false;
+    for (collection_transfer_markers) |m| {
         if (std.mem.indexOf(u8, line, m) != null) {
-            has_append = true;
+            has_collection = true;
             break;
         }
     }
-    if (!has_append) return false;
+    if (!has_collection) return false;
     for (acquire_needles) |needle| {
         if (std.mem.indexOf(u8, line, needle) != null) return true;
     }
@@ -255,14 +264,15 @@ fn bodyTransfersBinding(body: []const u8, name: []const u8) bool {
         if (bodyAssignsBindingToOutParam(body, id)) return true;
         if (bindingUsedInReturnedStructField(body, id)) return true;
         if (bindingConsumedByCollectionCall(body, id)) return true;
+        if (bindingStoredToField(body, id)) return true;
     }
     return false;
 }
 
 fn bindingConsumedByCollectionCall(body: []const u8, name: []const u8) bool {
     // Multi-line: `const data = try dupe; try list.append(..., .{ .data = data });`
-    const markers = [_][]const u8{ ".append(", ".appendSlice(" };
-    for (markers) |marker| {
+    // also put/insert siblings.
+    for (collection_transfer_markers) |marker| {
         var from: usize = 0;
         while (from < body.len) {
             const idx = std.mem.indexOfPos(u8, body, from, marker) orelse break;
@@ -275,6 +285,44 @@ fn bindingConsumedByCollectionCall(body: []const u8, name: []const u8) bool {
             if (identAppearsInSpan(args, name)) return true;
             from = close + 1;
         }
+    }
+    return false;
+}
+
+/// `const name = try dupe(...); self.name = name;` — two-step field handoff.
+fn bindingStoredToField(body: []const u8, name: []const u8) bool {
+    var i: usize = 0;
+    while (i < body.len) : (i += 1) {
+        if (body[i] != '=') continue;
+        if (i + 1 < body.len and (body[i + 1] == '=' or body[i + 1] == '>')) continue;
+        if (i > 0 and (body[i - 1] == '!' or body[i - 1] == '<' or body[i - 1] == '>' or body[i - 1] == '=')) continue;
+
+        var j = i + 1;
+        while (j < body.len and std.ascii.isWhitespace(body[j])) : (j += 1) {}
+        if (!std.mem.startsWith(u8, body[j..], name)) continue;
+        const end = j + name.len;
+        if (end < body.len) {
+            const next = body[end];
+            // Reject `self.x = name.len` / `name[0]` / `name_more`.
+            if (next == '.' or next == '[') continue;
+            if (std.ascii.isAlphanumeric(next) or next == '_') continue;
+        }
+
+        // LHS: walk back to start of statement / line.
+        var lhs_end = i;
+        while (lhs_end > 0 and std.ascii.isWhitespace(body[lhs_end - 1])) : (lhs_end -= 1) {}
+        var lhs_start = lhs_end;
+        while (lhs_start > 0) {
+            const c = body[lhs_start - 1];
+            if (c == '\n' or c == ';' or c == '{') break;
+            lhs_start -= 1;
+        }
+        const lhs = std.mem.trim(u8, body[lhs_start..lhs_end], " \t");
+        if (lhs.len == 0) continue;
+        if (std.mem.startsWith(u8, lhs, "const ") or std.mem.startsWith(u8, lhs, "var ")) continue;
+        // Must be a field / nested store (`self.name`, `server.client_name`).
+        if (std.mem.indexOfScalar(u8, lhs, '.') == null) continue;
+        return true;
     }
     return false;
 }
@@ -912,4 +960,48 @@ test "leaky local alloc is flagged; defer free and return-transfer are not" {
     defer cancel_diags.deinit(gpa);
     try analyzeSource("cancel.zig", cancel_src, &cancel_diags, gpa);
     try std.testing.expect(cancel_diags.items.len == 0);
+
+    const field_binding_src =
+        \\pub fn store(self: *S, allocator: anytype, src: []const u8) !void {
+        \\    const name = try allocator.dupe(u8, src);
+        \\    self.name = name;
+        \\}
+    ;
+    var field_binding_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer field_binding_diags.deinit(gpa);
+    try analyzeSource("field_binding.zig", field_binding_src, &field_binding_diags, gpa);
+    try std.testing.expect(field_binding_diags.items.len == 0);
+
+    const field_binding_len_src =
+        \\pub fn bad(self: *S, allocator: anytype, src: []const u8) !usize {
+        \\    const name = try allocator.dupe(u8, src);
+        \\    self.len = name.len;
+        \\    return name.len;
+        \\}
+    ;
+    var field_binding_len_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer field_binding_len_diags.deinit(gpa);
+    try analyzeSource("field_binding_len.zig", field_binding_len_src, &field_binding_len_diags, gpa);
+    try std.testing.expect(field_binding_len_diags.items.len >= 1);
+
+    const put_same_src =
+        \\pub fn putOwned(map: anytype, allocator: anytype, key: u32, src: []const u8) !void {
+        \\    try map.put(key, try allocator.dupe(u8, src));
+        \\}
+    ;
+    var put_same_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer put_same_diags.deinit(gpa);
+    try analyzeSource("put_same.zig", put_same_src, &put_same_diags, gpa);
+    try std.testing.expect(put_same_diags.items.len == 0);
+
+    const put_multi_src =
+        \\pub fn putOwned(map: anytype, allocator: anytype, key: u32, src: []const u8) !void {
+        \\    const value = try allocator.dupe(u8, src);
+        \\    try map.put(key, value);
+        \\}
+    ;
+    var put_multi_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer put_multi_diags.deinit(gpa);
+    try analyzeSource("put_multi.zig", put_multi_src, &put_multi_diags, gpa);
+    try std.testing.expect(put_multi_diags.items.len == 0);
 }

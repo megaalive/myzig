@@ -45,11 +45,11 @@ Also see `docs/BLINDSPOTS.md` (analyzer detail) and `docs/friction-playbook.md`.
 - Returning an opened file handle counts as transfer for `resource.file-undischarged`.
 - Acquires also include `.allocPrint(` / `.allocPrintZ(` / `.alignedAlloc(` / `.dupeZ(` / `.dupeSentinel(` / `.realloc(` / `mem.concat(` / `mem.join(` (see `AZIG-OWN-003`).
 - Rename chains (`a → b → c`) are followed for transfer/free (bounded closure).
-- Same-line `list.append(try …dupe/alloc…)` and multi-line append that names the binding in args count as collection transfer (`AZIG-OWN-004`, `EXT-STUDY-002`).
+- Same-line `list.append(try …dupe/alloc…)` / `map.put(…, try …dupe…)` and multi-line forms that name the binding in args count as collection transfer (`AZIG-OWN-004`, `EXT-STUDY-002`, `MYZIG-OWN-003`); markers include put/insert siblings.
 - `@ptrCast` / `@alignCast` permits may sit on the previous/current/next line (`AZIG-OWN-005`).
 - Field initializers inside `return .{ ... }` count as transfer (`AZIG-OWN-006`), including `const x = try …; return .{ .f = x }`.
 - Exact assignment retarget `out = next` joins the alias closure (`AZIG-OWN-007`).
-- Field assignment `self.x = try …alloc/dupe/create` counts as store transfer (`EXT-STUDY-007`).
+- Field assignment `self.x = try …alloc/dupe/create` and two-step `const x = try …; self.x = x` count as store transfer (`EXT-STUDY-007`, `MYZIG-OWN-003`).
 - Indexed store `into[i] = try …dupe/alloc` counts as transfer into a caller buffer (`EXT-STUDY-020`).
 - Arena-token acquires (`analyser.arena`, `arena_allocator`, `scratch_allocator`, `boottime_allocator`, …) count as transferred (`EXT-STUDY-008`, `EXT-STUDY-024`, `EXT-STUDY-039`).
 - `.create(` is an acquire only for single-argument calls (`allocator.create(T)`) (`EXT-STUDY-009`).
@@ -63,6 +63,7 @@ Also see `docs/BLINDSPOTS.md` (analyzer detail) and `docs/friction-playbook.md`.
 - Kernel PMM/VMM/guest-quota patterns stay playbook (`EXT-STUDY-037`..`042`).
 - Async/net/wasm/image/crypto/tooling tips: `EXT-STUDY-043`..`054` (named shortlists must be finished in-batch).
 - UEFI/HV/OS cadangan + clone-blocker process: `EXT-STUDY-055`..`063` (optional/cadangan names count; API survey when clone fails).
+- Cross-function callee free / opaque `takeOwnership(buf)` remain out of scope (`MYZIG-OWN-003` boundary).
 
 ## Dogfood snapshot
 

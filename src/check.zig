@@ -4,6 +4,8 @@ const std = @import("std");
 const compat = @import("compat.zig");
 const diagnostic = @import("diagnostic.zig");
 const alloc_undischarged = @import("rules/alloc_undischarged.zig");
+const file_undischarged = @import("rules/file_undischarged.zig");
+const ptrcast_unremarked = @import("rules/ptrcast_unremarked.zig");
 
 pub const Result = struct {
     diagnostics: std.ArrayList(diagnostic.Diagnostic),
@@ -21,16 +23,12 @@ pub fn checkPath(
     var result = Result{ .diagnostics = .empty };
     errdefer result.deinit(gpa);
 
-    const st = compat.statFile(io, path) catch |err| switch (err) {
-        else => return err,
-    };
-
+    const st = try compat.statFile(io, path);
     switch (st.kind) {
         .file => try checkFile(io, gpa, path, &result.diagnostics),
         .directory => try checkDir(io, gpa, path, &result.diagnostics),
         else => return error.UnsupportedPath,
     }
-
     return result;
 }
 
@@ -79,6 +77,8 @@ fn checkFile(
     const source = try compat.readFileAlloc(io, gpa, path, 8 * 1024 * 1024);
     defer gpa.free(source);
     try alloc_undischarged.analyzeSource(path, source, out, gpa);
+    try file_undischarged.analyzeSource(path, source, out, gpa);
+    try ptrcast_unremarked.analyzeSource(path, source, out, gpa);
 }
 
 pub fn writeReport(writer: *std.Io.Writer, diags: []const diagnostic.Diagnostic) std.Io.Writer.Error!void {
@@ -90,4 +90,6 @@ pub fn writeReport(writer: *std.Io.Writer, diags: []const diagnostic.Diagnostic)
 
 test {
     _ = alloc_undischarged;
+    _ = file_undischarged;
+    _ = ptrcast_unremarked;
 }

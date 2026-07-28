@@ -59,6 +59,16 @@ jobs:
           fi
           # Pass fixture must be clean.
           "$BIN" check fixtures/pass/alloc_defer_free.zig
+          "$BIN" check fixtures/pass/file_defer_close.zig
+          "$BIN" check fixtures/pass/ptrcast_remarked.zig
+          if "$BIN" check fixtures/fail/file_undischarged.zig; then
+            echo "expected file finding" >&2
+            exit 1
+          fi
+          if "$BIN" check fixtures/fail/ptrcast_unremarked.zig; then
+            echo "expected ptrcast finding" >&2
+            exit 1
+          fi
           # Explain + receipt for the known finding.
           "$BIN" explain fixtures/fail/alloc_undischarged.zig:11 | head -n 20
           set +e

@@ -215,10 +215,73 @@ pub const seed_alloc_undischarged: Rule = .{
     .references = &.{
         "fixtures/fail/alloc_undischarged.zig",
         "fixtures/pass/alloc_defer_free.zig",
+        "research/incidents/MYZIG-OWN-001.md",
     },
 };
 
-pub const seed_rules: []const Rule = &.{seed_alloc_undischarged};
+pub const seed_file_undischarged: Rule = .{
+    .id = "resource.file-undischarged",
+    .category = .ownership,
+    .default_severity = .warning,
+    .certainty_ceiling = .likely,
+    .obligation = .resource_must_close_or_transfer,
+    .detector = .local_ast,
+    .discharges = &.{ .defer_free, .other },
+    .message = "opened/created file may leave the function without close",
+    .explanation =
+    \\Opening a file acquires a resource obligation: close it, defer-close it,
+    \\or transfer the handle. Local heuristics look for `.close` discharge markers.
+    ,
+    .repairs = &.{
+        .{
+            .tier = .canonical,
+            .intent = "local_lifetime",
+            .summary = "Add `defer file.close(...);` immediately after a successful open.",
+        },
+        .{
+            .tier = .suggestion,
+            .intent = "transfer_return",
+            .summary = "Return the file handle to the caller and document ownership transfer.",
+        },
+    },
+    .references = &.{
+        "fixtures/fail/file_undischarged.zig",
+        "fixtures/pass/file_defer_close.zig",
+    },
+};
+
+pub const seed_ptrcast_unremarked: Rule = .{
+    .id = "unsafe.ptrcast-unremarked",
+    .category = .unsafe_accounting,
+    .default_severity = .note,
+    .certainty_ceiling = .convention,
+    .obligation = .unsafe_must_be_permitted,
+    .detector = .local_ast,
+    .discharges = &.{.permit},
+    .message = "pointer cast lacks an adjacent safety/permit remark",
+    .explanation =
+    \\`@ptrCast` / `@alignCast` are explicit unsafe operations. Early myzig asks
+    \\for an adjacent `// safety:` or permit remark so the reason stays auditable.
+    \\This is a convention signal, not a proof of undefined behavior.
+    ,
+    .repairs = &.{
+        .{
+            .tier = .suggestion,
+            .intent = "document_unsafe",
+            .summary = "Add `// safety: <reason>` on the cast line, or a future `unsafe.permit` form.",
+        },
+    },
+    .references = &.{
+        "fixtures/fail/ptrcast_unremarked.zig",
+        "fixtures/pass/ptrcast_remarked.zig",
+    },
+};
+
+pub const seed_rules: []const Rule = &.{
+    seed_alloc_undischarged,
+    seed_file_undischarged,
+    seed_ptrcast_unremarked,
+};
 
 test "certainty ceiling clamps proven down to likely" {
     const clamped = seed_alloc_undischarged.clampCertainty(.proven);

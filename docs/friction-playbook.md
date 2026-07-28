@@ -104,3 +104,17 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **don't:** Copy snippets that still call `trimLeft`/`trimRight`
 - **promote-to-code-when:** already hit once → keep playbook; optional compat shim only if dogfood apps keep tripping
 - **incident:** none yet
+
+### F-OWN-003 · Collection fills transfer ownership
+- **symptom:** `try list.append(try allocator.dupe(...))` flagged as undischarged
+- **do:** Prefer same-line append+acquire (myzig treats as transfer). Free list items in `deinit` / explicit loops.
+- **don't:** Add a redundant `defer free` on a pointer that was appended into a owning list
+- **promote-to-code-when:** already promoted → same-line append transfer (`AZIG-OWN-004`)
+- **incident:** AZIG-OWN-004
+
+### F-OWN-004 · Permits may sit on the adjacent line
+- **symptom:** `@ptrCast` flagged even with `// myzig.permit(ptrcast): …` on the previous line
+- **do:** Keep permit on cast line or immediately adjacent line (prev/next)
+- **don't:** Place the remark several lines away and expect discharge
+- **promote-to-code-when:** already promoted → adjacent permit scan (`AZIG-OWN-005`)
+- **incident:** AZIG-OWN-005

@@ -64,6 +64,10 @@ jobs:
             echo "expected allocPrint findings" >&2
             exit 1
           fi
+          if "$BIN" check fixtures/fail/alloc_concat_undischarged.zig; then
+            echo "expected concat findings" >&2
+            exit 1
+          fi
           # Pass fixture must be clean.
           "$BIN" check fixtures/pass/alloc_defer_free.zig
           "$BIN" check fixtures/pass/alloc_return_local.zig
@@ -72,9 +76,11 @@ jobs:
           "$BIN" check fixtures/pass/alloc_out_param.zig
           "$BIN" check fixtures/pass/alloc_explicit_free.zig
           "$BIN" check fixtures/pass/alloc_print_return.zig
+          "$BIN" check fixtures/pass/alloc_append_transfer.zig
           "$BIN" check fixtures/pass/file_defer_close.zig
           "$BIN" check fixtures/pass/file_return.zig
           "$BIN" check fixtures/pass/ptrcast_remarked.zig
+          "$BIN" check fixtures/pass/ptrcast_adjacent.zig
           if "$BIN" check fixtures/fail/file_undischarged.zig; then
             echo "expected file finding" >&2
             exit 1

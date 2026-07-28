@@ -58,6 +58,24 @@ pub fn lineSlice(source: []const u8, index: usize) []const u8 {
     return source[line_start..end];
 }
 
+/// Previous full line before the line containing `index`, if any.
+pub fn previousLineSlice(source: []const u8, index: usize) ?[]const u8 {
+    const line_start: usize = if (std.mem.lastIndexOfScalar(u8, source[0..index], '\n')) |nl| nl + 1 else 0;
+    if (line_start == 0) return null;
+    const prev_end = line_start - 1; // the '\n'
+    const prev_start: usize = if (std.mem.lastIndexOfScalar(u8, source[0..prev_end], '\n')) |nl| nl + 1 else 0;
+    return source[prev_start..prev_end];
+}
+
+/// Next full line after the line containing `index`, if any.
+pub fn nextLineSlice(source: []const u8, index: usize) ?[]const u8 {
+    const end = std.mem.indexOfScalarPos(u8, source, index, '\n') orelse return null;
+    if (end + 1 >= source.len) return null;
+    const next_start = end + 1;
+    const next_end = std.mem.indexOfScalarPos(u8, source, next_start, '\n') orelse source.len;
+    return source[next_start..next_end];
+}
+
 pub fn lineNumber(source: []const u8, index: usize) u32 {
     var line: u32 = 1;
     var i: usize = 0;

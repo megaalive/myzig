@@ -18,6 +18,8 @@ Rules (and compat/contract improvements) are born from incidents.
 | `AZIG-OWN-001` | Arena + coarse defer discharge limits |
 | `AZIG-OWN-002` | Out-param / one-hop rename transfers |
 | `AZIG-OWN-003` | `allocPrint` / related acquires were invisible |
+| `AZIG-OWN-004` | `list.append(try dupe)` collection transfer |
+| `AZIG-OWN-005` | Adjacent-line ptrcast permits |
 | `ZRIG-DOGFOOD-001` | Clean prefer-compat ratchet baseline |
 | `AGENT-STD-001` / `002` | std churn → compat + volatile rule |
 | `AGENT-CLI-001` / `002` | Clean exits; exhaustive CLI / witness hash |

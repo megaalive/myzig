@@ -9,7 +9,11 @@ const acquire_needles = [_][]const u8{
     ".allocPrintZ(",
     ".allocPrint(",
     ".alignedAlloc(",
+    ".dupeSentinel(",
     ".dupeZ(",
+    ".realloc(",
+    "mem.concat(",
+    "mem.join(",
     ".alloc(",
     ".create(",
     ".dupe(",
@@ -41,6 +45,7 @@ pub fn analyzeSource(
             const binding = bindingNameFromAcquireLine(line_slice);
             const transferred = isReturnTransferLine(line_slice) or
                 isOutParamAcquireLine(line_slice) or
+                isCollectionTransferLine(line_slice) or
                 (binding != null and bodyTransfersBinding(body, binding.?));
             const released = binding != null and bodyReleasesBindingTree(body, binding.?);
             const discharged = transferred or released or has_defer_discharge;
@@ -73,6 +78,23 @@ fn isOutParamAcquireLine(line: []const u8) bool {
     // `out.* = try allocator.alloc(...)` — ownership handed to caller via pointer.
     if (std.mem.indexOf(u8, line, ".*") == null) return false;
     if (std.mem.indexOf(u8, line, "=") == null) return false;
+    for (acquire_needles) |needle| {
+        if (std.mem.indexOf(u8, line, needle) != null) return true;
+    }
+    return false;
+}
+
+fn isCollectionTransferLine(line: []const u8) bool {
+    // `try list.append(try allocator.dupe(...))` — ownership moves into the collection.
+    const markers = [_][]const u8{ ".append(", ".appendSlice(" };
+    var has_append = false;
+    for (markers) |m| {
+        if (std.mem.indexOf(u8, line, m) != null) {
+            has_append = true;
+            break;
+        }
+    }
+    if (!has_append) return false;
     for (acquire_needles) |needle| {
         if (std.mem.indexOf(u8, line, needle) != null) return true;
     }
@@ -377,6 +399,17 @@ test "leaky local alloc is flagged; defer free and return-transfer are not" {
         \\    return try std.fmt.allocPrint(allocator, "n={d}", .{1});
         \\}
     ;
+    const append_transfer_src =
+        \\pub fn collect(allocator: anytype, list: anytype, s: []const u8) !void {
+        \\    try list.append(try allocator.dupe(u8, s));
+        \\}
+    ;
+    const concat_fail_src =
+        \\pub fn leakyJoin(allocator: anytype) !usize {
+        \\    const s = try std.mem.concat(allocator, u8, &.{ "a", "b" });
+        \\    return s.len;
+        \\}
+    ;
 
     var fail_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
     defer fail_diags.deinit(gpa);
@@ -437,6 +470,16 @@ test "leaky local alloc is flagged; defer free and return-transfer are not" {
     defer print_ok_diags.deinit(gpa);
     try analyzeSource("print_ok.zig", alloc_print_ok_src, &print_ok_diags, gpa);
     try std.testing.expect(print_ok_diags.items.len == 0);
+
+    var append_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer append_diags.deinit(gpa);
+    try analyzeSource("append.zig", append_transfer_src, &append_diags, gpa);
+    try std.testing.expect(append_diags.items.len == 0);
+
+    var concat_fail_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer concat_fail_diags.deinit(gpa);
+    try analyzeSource("concat_fail.zig", concat_fail_src, &concat_fail_diags, gpa);
+    try std.testing.expect(concat_fail_diags.items.len >= 1);
 
     const comment_src =
         \\pub fn documented() void {

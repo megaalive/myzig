@@ -224,11 +224,14 @@ pub const seed_alloc_undischarged: Rule = .{
         "fixtures/pass/alloc_explicit_free.zig",
         "fixtures/pass/alloc_print_return.zig",
         "fixtures/pass/alloc_return_chain.zig",
+        "fixtures/pass/alloc_append_transfer.zig",
         "fixtures/fail/alloc_print_undischarged.zig",
+        "fixtures/fail/alloc_concat_undischarged.zig",
         "research/incidents/MYZIG-OWN-001.md",
         "research/incidents/MYZIG-OWN-002.md",
         "research/incidents/AZIG-OWN-002.md",
         "research/incidents/AZIG-OWN-003.md",
+        "research/incidents/AZIG-OWN-004.md",
     },
 };
 
@@ -284,17 +287,19 @@ pub const seed_ptrcast_unremarked: Rule = .{
         .{
             .tier = .canonical,
             .intent = "structured_permit",
-            .summary = "Add `// myzig.permit(ptrcast): <reason>` (or aligncast) on the cast line.",
+            .summary = "Add `// myzig.permit(ptrcast): <reason>` on the cast line or the adjacent line.",
         },
         .{
             .tier = .suggestion,
             .intent = "document_unsafe",
-            .summary = "Add `// safety: <reason>` when a structured permit kind is not yet chosen.",
+            .summary = "Add `// safety: <reason>` on/near the cast when a structured permit kind is not yet chosen.",
         },
     },
     .references = &.{
         "fixtures/fail/ptrcast_unremarked.zig",
         "fixtures/pass/ptrcast_remarked.zig",
+        "fixtures/pass/ptrcast_adjacent.zig",
+        "research/incidents/AZIG-OWN-005.md",
     },
 };
 

@@ -33,6 +33,7 @@ pub fn analyzeSource(
             const line_slice = scan.lineSlice(source, abs_index);
             const binding = bindingNameFromAcquireLine(line_slice);
             const transferred = isReturnTransferLine(line_slice) or
+                isOutParamAcquireLine(line_slice) or
                 (binding != null and bodyReturnsBinding(body, binding.?));
             if (!transferred and !has_defer_close and !has_close_call) {
                 try out.append(gpa, diagnostic.Diagnostic.fromRule(
@@ -53,6 +54,15 @@ pub fn analyzeSource(
 
 fn isReturnTransferLine(line: []const u8) bool {
     if (std.mem.indexOf(u8, line, "return") == null) return false;
+    for (acquire_needles) |needle| {
+        if (std.mem.indexOf(u8, line, needle) != null) return true;
+    }
+    return false;
+}
+
+fn isOutParamAcquireLine(line: []const u8) bool {
+    if (std.mem.indexOf(u8, line, ".*") == null) return false;
+    if (std.mem.indexOf(u8, line, "=") == null) return false;
     for (acquire_needles) |needle| {
         if (std.mem.indexOf(u8, line, needle) != null) return true;
     }

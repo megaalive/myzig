@@ -40,9 +40,7 @@ pub fn analyzeSource(
             search_from = hit + 1;
             continue;
         }
-        const line = scan.lineSlice(source, hit);
-        const parsed = permit.parseLine(line, n.kind);
-        if (!parsed.ok) {
+        if (!hasAdjacentPermit(source, hit, n.kind)) {
             try out.append(gpa, diagnostic.Diagnostic.fromRule(
                 schema.seed_ptrcast_unremarked,
                 .convention,
@@ -58,6 +56,18 @@ pub fn analyzeSource(
     }
 }
 
+fn hasAdjacentPermit(source: []const u8, index: usize, expected: permit.Kind) bool {
+    const curr = scan.lineSlice(source, index);
+    if (permit.parseLine(curr, expected).ok) return true;
+    if (scan.previousLineSlice(source, index)) |prev| {
+        if (permit.parseLine(prev, expected).ok) return true;
+    }
+    if (scan.nextLineSlice(source, index)) |next| {
+        if (permit.parseLine(next, expected).ok) return true;
+    }
+    return false;
+}
+
 test "ptrCast without remark is flagged" {
     const gpa = std.testing.allocator;
     const fail_src =
@@ -70,6 +80,12 @@ test "ptrCast without remark is flagged" {
         \\    return @ptrCast(p); // myzig.permit(ptrcast): FFI opaque handle
         \\}
     ;
+    const adjacent_src =
+        \\pub fn okAdjacent(p: *anyopaque) *u8 {
+        \\    // myzig.permit(ptrcast): callback opaque
+        \\    return @ptrCast(p);
+        \\}
+    ;
     var fail_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
     defer fail_diags.deinit(gpa);
     try analyzeSource("fail.zig", fail_src, &fail_diags, gpa);
@@ -79,4 +95,9 @@ test "ptrCast without remark is flagged" {
     defer pass_diags.deinit(gpa);
     try analyzeSource("pass.zig", pass_src, &pass_diags, gpa);
     try std.testing.expect(pass_diags.items.len == 0);
+
+    var adj_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer adj_diags.deinit(gpa);
+    try analyzeSource("adjacent.zig", adjacent_src, &adj_diags, gpa);
+    try std.testing.expect(adj_diags.items.len == 0);
 }

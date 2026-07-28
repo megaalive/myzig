@@ -38,8 +38,10 @@ Also see `docs/BLINDSPOTS.md` (analyzer detail) and `docs/friction-playbook.md`.
 - One-hop rename (`const owned = buf; return owned;`) and out-params (`out.* = buf` / `out.* = try …alloc`) count as transfer.
 - Explicit `.free(name)` / `.destroy(name)` / `name.deinit(` discharge that binding (and rename aliases), with or without `defer`.
 - Returning an opened file handle counts as transfer for `resource.file-undischarged`.
-- Acquires also include `.allocPrint(` / `.allocPrintZ(` / `.alignedAlloc(` / `.dupeZ(` (see `AZIG-OWN-003`).
+- Acquires also include `.allocPrint(` / `.allocPrintZ(` / `.alignedAlloc(` / `.dupeZ(` / `.dupeSentinel(` / `.realloc(` / `mem.concat(` / `mem.join(` (see `AZIG-OWN-003`).
 - Rename chains (`a → b → c`) are followed for transfer/free (bounded closure).
+- Same-line `list.append(try …dupe/alloc…)` counts as collection transfer (`AZIG-OWN-004`).
+- `@ptrCast` / `@alignCast` permits may sit on the previous/current/next line (`AZIG-OWN-005`).
 
 ## Dogfood snapshot
 

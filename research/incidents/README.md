@@ -30,6 +30,9 @@ Rules (and compat/contract improvements) are born from incidents.
 | `EXT-STUDY-004` | Hidden page/c allocator → `ownership.hidden-allocator` |
 | `EXT-STUDY-005` | Swallow error + `myzig-disable-*` suppressions |
 | `EXT-STUDY-006` | Study boundary: general lint / build-step hosts not cloned |
+| `EXT-STUDY-007` | Field-store ownership transfer |
+| `EXT-STUDY-008` | Arena-backed acquires |
+| `EXT-STUDY-009` | `allocator.create(T)` vs method create; documented unreachable |
 | `ZRIG-DOGFOOD-001` | Clean prefer-compat ratchet baseline |
 | `AGENT-STD-001` / `002` | std churn → compat + volatile rule |
 | `AGENT-CLI-001` / `002` | Clean exits; exhaustive CLI / witness hash |

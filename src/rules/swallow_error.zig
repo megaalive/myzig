@@ -25,6 +25,11 @@ pub fn analyzeSource(
 
         if (std.mem.startsWith(u8, source[j..], "unreachable")) {
             if (scan.isInLineComment(source, i)) continue;
+            // Documented invariant: adjacent/same-line comment excuses unreachable.
+            if (catchUnreachableIsDocumented(source, i)) {
+                i = j;
+                continue;
+            }
             try out.append(gpa, diagnostic.Diagnostic.fromRule(
                 schema.seed_swallow_error,
                 .convention,
@@ -91,6 +96,16 @@ fn catchBodyHasComment(inner: []const u8) bool {
     return std.mem.indexOf(u8, inner, "//") != null;
 }
 
+fn catchUnreachableIsDocumented(source: []const u8, catch_index: usize) bool {
+    const curr = scan.lineSlice(source, catch_index);
+    if (std.mem.indexOf(u8, curr, "//") != null) return true;
+    if (scan.previousLineSlice(source, catch_index)) |prev| {
+        const trimmed = std.mem.trim(u8, prev, " \t");
+        if (std.mem.startsWith(u8, trimmed, "//")) return true;
+    }
+    return false;
+}
+
 test "empty catch flagged; commented catch and real handler are not" {
     const gpa = std.testing.allocator;
     const fail_src =
@@ -126,4 +141,25 @@ test "empty catch flagged; commented catch and real handler are not" {
     defer pass_diags.deinit(gpa);
     try analyzeSource("pass.zig", pass_src, &pass_diags, gpa);
     try std.testing.expect(pass_diags.items.len == 0);
+
+    const unreachable_doc_src =
+        \\pub fn ok3() void {
+        \\    // Uri is guaranteed valid
+        \\    _ = parse() catch unreachable;
+        \\}
+    ;
+    var unreachable_doc_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer unreachable_doc_diags.deinit(gpa);
+    try analyzeSource("unreachable_doc.zig", unreachable_doc_src, &unreachable_doc_diags, gpa);
+    try std.testing.expect(unreachable_doc_diags.items.len == 0);
+
+    const unreachable_bare_src =
+        \\pub fn bad2() void {
+        \\    _ = parse() catch unreachable;
+        \\}
+    ;
+    var unreachable_bare_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer unreachable_bare_diags.deinit(gpa);
+    try analyzeSource("unreachable_bare.zig", unreachable_bare_src, &unreachable_bare_diags, gpa);
+    try std.testing.expect(unreachable_bare_diags.items.len >= 1);
 }

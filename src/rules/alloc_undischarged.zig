@@ -41,12 +41,20 @@ pub fn analyzeSource(
                 search_from = hit + 1;
                 continue;
             }
+            // Skip non-allocator `.create(value, …)` method calls (type-first
+            // `allocator.create(T)` remains an acquire).
+            if (isDotCreateNeedle(body, hit) and !isAllocatorCreateCall(body, hit)) {
+                search_from = hit + 1;
+                continue;
+            }
             const line_slice = scan.lineSlice(source, abs_index);
             const binding = bindingNameFromAcquireLine(line_slice);
             const hit_in_body = hit; // relative to body
             const transferred = isReturnTransferLine(line_slice) or
                 isOutParamAcquireLine(line_slice) or
                 isCollectionTransferLine(line_slice) or
+                isFieldStoreTransferLine(line_slice) or
+                isArenaBackedAcquireLine(line_slice) or
                 acquireInReturnedStructLiteral(body, hit_in_body) or
                 (binding != null and bodyTransfersBinding(body, binding.?));
             const released = binding != null and bodyReleasesBindingTree(body, binding.?);
@@ -101,6 +109,73 @@ fn isCollectionTransferLine(line: []const u8) bool {
         if (std.mem.indexOf(u8, line, needle) != null) return true;
     }
     return false;
+}
+
+/// `self.field = try allocator.dupe(...)` / `lazy.value = try Context.create(...)`
+/// — ownership stored into a longer-lived owner.
+fn isFieldStoreTransferLine(line: []const u8) bool {
+    const eq = std.mem.indexOfScalar(u8, line, '=') orelse return false;
+    if (eq + 1 < line.len and (line[eq + 1] == '=' or line[eq + 1] == '>')) return false;
+    if (eq > 0 and (line[eq - 1] == '!' or line[eq - 1] == '<' or line[eq - 1] == '>' or line[eq - 1] == '=')) return false;
+    const lhs = std.mem.trim(u8, line[0..eq], " \t");
+    // Field / nested store (not a plain local binding, not `out.*` alone which
+    // is handled as out-param; `out.*` also contains '.' so it matches too — fine).
+    if (std.mem.indexOfScalar(u8, lhs, '.') == null) return false;
+    if (std.mem.startsWith(u8, lhs, "const ") or std.mem.startsWith(u8, lhs, "var ")) return false;
+    const rhs = line[eq + 1 ..];
+    for (acquire_needles) |needle| {
+        if (std.mem.indexOf(u8, rhs, needle) != null) return true;
+    }
+    return false;
+}
+
+/// Acquires against an arena allocator are owned by the arena's lifetime.
+fn isArenaBackedAcquireLine(line: []const u8) bool {
+    const markers = [_][]const u8{
+        ".arena.",
+        ".arena,",
+        ".arena)",
+        "arena.",
+        "arena,",
+        "arena)",
+        "arena_allocator",
+    };
+    var has_arena = false;
+    for (markers) |m| {
+        if (std.mem.indexOf(u8, line, m) != null) {
+            has_arena = true;
+            break;
+        }
+    }
+    if (!has_arena) return false;
+    for (acquire_needles) |needle| {
+        if (std.mem.indexOf(u8, line, needle) != null) return true;
+    }
+    return false;
+}
+
+fn isDotCreateNeedle(body: []const u8, hit: usize) bool {
+    return std.mem.startsWith(u8, body[hit..], ".create(");
+}
+
+/// `allocator.create(T)` takes a single type argument; method creates usually pass values (often multi-arg).
+fn isAllocatorCreateCall(body: []const u8, hit: usize) bool {
+    if (!std.mem.startsWith(u8, body[hit..], ".create(")) return false;
+    const open = hit + ".create(".len - 1; // '('
+    const close = scan.matchingParen(body, open) orelse return false;
+    const args = body[open + 1 .. close];
+    // Multi-arg `.create(a, b)` is treated as a method, not allocator.create(T).
+    var depth: i32 = 0;
+    for (args) |c| {
+        switch (c) {
+            '(', '[', '{' => depth += 1,
+            ')', ']', '}' => depth -= 1,
+            ',' => if (depth == 0) return false,
+            else => {},
+        }
+    }
+    const trimmed = std.mem.trim(u8, args, " \t\n\r");
+    return trimmed.len > 0;
 }
 
 /// Acquires used as field initializers inside `return .{ ... }` transfer to the caller.
@@ -695,4 +770,46 @@ test "leaky local alloc is flagged; defer free and return-transfer are not" {
     defer comment_diags.deinit(gpa);
     try analyzeSource("comment.zig", comment_src, &comment_diags, gpa);
     try std.testing.expect(comment_diags.items.len == 0);
+
+    const field_store_src =
+        \\pub fn store(self: *S, allocator: anytype, src: []const u8) !void {
+        \\    self.name = try allocator.dupe(u8, src);
+        \\}
+    ;
+    var field_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer field_diags.deinit(gpa);
+    try analyzeSource("field.zig", field_store_src, &field_diags, gpa);
+    try std.testing.expect(field_diags.items.len == 0);
+
+    const arena_src =
+        \\pub fn scratch(analyser: anytype) !void {
+        \\    const held = try analyser.arena.dupe(u8, "x");
+        \\    _ = held;
+        \\}
+    ;
+    var arena_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer arena_diags.deinit(gpa);
+    try analyzeSource("arena.zig", arena_src, &arena_diags, gpa);
+    try std.testing.expect(arena_diags.items.len == 0);
+
+    const method_create_src =
+        \\pub fn lazyGet(lazy: *Lazy, handle: *Handle, allocator: anytype) !void {
+        \\    lazy.value = try Context.create(handle, allocator);
+        \\}
+    ;
+    var method_create_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer method_create_diags.deinit(gpa);
+    try analyzeSource("method_create.zig", method_create_src, &method_create_diags, gpa);
+    try std.testing.expect(method_create_diags.items.len == 0);
+
+    const alloc_create_fail_src =
+        \\pub fn leakyCreate(allocator: anytype) !void {
+        \\    const p = try allocator.create(u32);
+        \\    _ = p;
+        \\}
+    ;
+    var alloc_create_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer alloc_create_diags.deinit(gpa);
+    try analyzeSource("alloc_create.zig", alloc_create_fail_src, &alloc_create_diags, gpa);
+    try std.testing.expect(alloc_create_diags.items.len >= 1);
 }

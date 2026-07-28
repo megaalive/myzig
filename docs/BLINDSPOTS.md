@@ -9,7 +9,7 @@ myzig's early detectors are **local heuristics**, not whole-program proof.
 | Area | Limitation |
 |------|------------|
 | Path sensitivity | Conditional free/close may be treated as function-wide discharge |
-| Transfers | Return / out-param / rename / retarget / `return .{ fields }` / append (same-line or binding-in-args) tracked; wrapper / callee frees still weak |
+| Transfers | Return / out-param / rename / retarget / field-store / `return .{ fields }` / append / arena-backed; wrapper / callee frees still weak |
 | Aliasing | Exact RHS rename closure (bounded) is followed for transfer/free; wrapper APIs stay invisible |
 | Local free | `.free(name)` / `.destroy(name)` / `name.deinit(` discharge that binding; coarse function-wide `defer …deinit/free` remains for arena-style sites |
 | Permits | `@ptrCast`/`@alignCast` accept permit/safety on adjacent lines (prev/curr/next) |
@@ -24,9 +24,11 @@ myzig's early detectors are **local heuristics**, not whole-program proof.
 | Comments | Needle hits after `//` on the same line are ignored (M7 FP guard) |
 | SARIF | Forge-oriented SARIF 2.1.0 (`ruleIndex`, fingerprints, `automationDetails`, `helpUri`); CI may upload on ubuntu (`continue-on-error`) |
 | Hidden allocators | Needle-based (`page_allocator` / `c_allocator`); aliased heaps / non-call uses FN (`EXT-STUDY-004`) |
-| Swallow errors | Empty / unreachable catch only; multi-line disable regions not supported |
+| Swallow errors | Empty catch always; bare `catch unreachable` flagged; adjacent-comment unreachable allowed |
 | Suppressions | Line-scoped `myzig-disable-*` only (not multi-line enable/disable regions) |
 | General lint | Naming, unused, braces, build-step AST hosts — out of product scope (`EXT-STUDY-006`) |
+| `.create(` | Single-arg only (`allocator.create(T)`); multi-arg methods skipped (`EXT-STUDY-009`) |
+| Arena acquires | Token heuristic (`arena` / `arena_allocator`); does not prove arena deinit |
 
 ## Product stance
 

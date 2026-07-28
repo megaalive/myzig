@@ -153,3 +153,24 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **don't:** Broad-disable without a reason; do not expect multi-line region disables yet
 - **promote-to-code-when:** already promoted → `suppress.zig`
 - **incident:** EXT-STUDY-005
+
+### F-OWN-010 · Store into owner fields
+- **symptom:** `self.buf = try allocator.dupe(...)` flagged as undischarged
+- **do:** Prefer field assignment into the owning struct; free in `deinit`
+- **don't:** Add a local `defer free` on a pointer that was stored into `self`
+- **promote-to-code-when:** already promoted → field-store transfer
+- **incident:** EXT-STUDY-007
+
+### F-OWN-011 · Arena scratch does not need local free
+- **symptom:** `try analyser.arena.dupe(...)` flagged even though arena owns it
+- **do:** Allocate against the arena; let arena `deinit`/reset reclaim
+- **don't:** Pair arena acquires with GPA `free` of the same pointer
+- **promote-to-code-when:** already promoted → arena-token transfer
+- **incident:** EXT-STUDY-008
+
+### F-OWN-012 · Method create is not allocator.create
+- **symptom:** `Context.create(handle, allocator)` flagged like `allocator.create(T)`
+- **do:** Use single-arg `allocator.create(T)` for heap objects
+- **don't:** Expect every `.create(` to be an ownership acquire
+- **promote-to-code-when:** already promoted → single-arg `.create(` filter
+- **incident:** EXT-STUDY-009

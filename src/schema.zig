@@ -6,7 +6,7 @@
 const std = @import("std");
 
 /// Bumped when seed rule set identity changes in a receipt-relevant way.
-pub const ruleset_revision: []const u8 = "0.0.0-seed7";
+pub const ruleset_revision: []const u8 = "0.0.0-seed8";
 
 pub const Certainty = enum {
     /// Expensive; only when local facts suffice. Heuristic AST rules must not use this as ceiling.
@@ -228,6 +228,9 @@ pub const seed_alloc_undischarged: Rule = .{
         "fixtures/pass/alloc_append_multiline.zig",
         "fixtures/pass/alloc_struct_return.zig",
         "fixtures/pass/alloc_retarget.zig",
+        "fixtures/pass/alloc_field_store.zig",
+        "fixtures/pass/alloc_arena_backed.zig",
+        "fixtures/pass/method_create_store.zig",
         "fixtures/fail/alloc_print_undischarged.zig",
         "fixtures/fail/alloc_concat_undischarged.zig",
         "research/incidents/MYZIG-OWN-001.md",
@@ -238,6 +241,9 @@ pub const seed_alloc_undischarged: Rule = .{
         "research/incidents/AZIG-OWN-006.md",
         "research/incidents/AZIG-OWN-007.md",
         "research/incidents/EXT-STUDY-002.md",
+        "research/incidents/EXT-STUDY-007.md",
+        "research/incidents/EXT-STUDY-008.md",
+        "research/incidents/EXT-STUDY-009.md",
     },
 };
 
@@ -437,8 +443,9 @@ pub const seed_swallow_error: Rule = .{
     .discharges = &.{.other},
     .message = "error is swallowed without handling",
     .explanation =
-    \\Empty `catch {}` or `catch unreachable` can hide ownership cleanup failures.
-    \\Comment-only catch bodies are allowed (documented ignore).
+    \\Empty `catch {}` or bare `catch unreachable` can hide ownership cleanup failures.
+    \\Comment-only catch bodies and adjacent-comment `catch unreachable` (documented
+    \\invariants) are allowed.
     ,
     .repairs = &.{
         .{
@@ -450,6 +457,7 @@ pub const seed_swallow_error: Rule = .{
     .references = &.{
         "fixtures/fail/swallow_error.zig",
         "research/incidents/EXT-STUDY-005.md",
+        "research/incidents/EXT-STUDY-009.md",
     },
 };
 

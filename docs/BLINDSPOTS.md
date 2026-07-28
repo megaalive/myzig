@@ -11,7 +11,7 @@ myzig's early detectors are **local heuristics**, not whole-program proof.
 | Path sensitivity | Conditional free/close may be treated as function-wide discharge |
 | Transfers | Return / out-param / indexed-out / rename / retarget / field-store / `return .{ fields }` / append / arena-backed; wrapper / callee frees still weak |
 | Aliasing | Exact RHS rename closure (bounded) is followed for transfer/free; wrapper APIs stay invisible |
-| Local free | `.free(name)` / `.destroy(name)` / `.release(name)` / `name.deinit(`/`.destroy(`/`.release(` discharge that binding; coarse function-wide `defer …deinit/free/release` remains for arena-style sites |
+| Local free | `.free(name)` / `.destroy(name)` / `.release(name)` / `.unload(name)` / `name.deinit(`/`.destroy(`/`.release(`/`.unload(` discharge that binding; coarse function-wide `defer …deinit/free/release/unload` remains for arena-style sites |
 | Permits | `@ptrCast`/`@alignCast` accept permit/safety on adjacent lines (prev/curr/next) |
 | Cross-function | Callee frees / ownership handoff across functions are out of scope |
 | Arenas | Arena-scoped lifetimes are not modeled beyond coarse `defer …deinit` discharge (see `AZIG-OWN-001`) |
@@ -40,6 +40,9 @@ myzig's early detectors are **local heuristics**, not whole-program proof.
 | Nested owners | Parent/child finalizer pools are playbook only (`EXT-STUDY-021`) |
 | Handle release | `release` discharges tracked bindings; multi-arg GPU create still skipped (`EXT-STUDY-022`) |
 | Protocol destroy | `name.destroy` matches init convention; listeners not modeled (`EXT-STUDY-023`) |
+| Load/Unload | `name.unload` matches init; no `Load*` acquire detector (`EXT-STUDY-025`) |
+| Context order | GPU-after-window and staging unload are playbook only (`EXT-STUDY-026`) |
+| begin/end modes | Mode stacks not tracked (`EXT-STUDY-027`) |
 
 ## Product stance
 

@@ -18,7 +18,7 @@ const acquire_needles = [_][]const u8{
     ".create(",
     ".dupe(",
 };
-const discharge_words = [_][]const u8{ "free", "destroy", "deinit", "release" };
+const discharge_words = [_][]const u8{ "free", "destroy", "deinit", "release", "unload" };
 
 pub fn analyzeSource(
     path: []const u8,
@@ -345,8 +345,8 @@ fn bodyReleasesBindingTree(body: []const u8, name: []const u8) bool {
 }
 
 fn bodyReleasesBinding(body: []const u8, name: []const u8) bool {
-    // `.free(name)` / `.destroy(name)` / `.release(name)` — including under `defer` / `errdefer`.
-    const call_needles = [_][]const u8{ ".free(", ".destroy(", ".release(" };
+    // `.free(name)` / `.destroy(name)` / `.release(name)` / `.unload(name)` — including under `defer` / `errdefer`.
+    const call_needles = [_][]const u8{ ".free(", ".destroy(", ".release(", ".unload(" };
     for (call_needles) |needle| {
         var i: usize = 0;
         while (i < body.len) : (i += 1) {
@@ -362,8 +362,8 @@ fn bodyReleasesBinding(body: []const u8, name: []const u8) bool {
             return true;
         }
     }
-    // `name.deinit(` / `name.destroy(` / `name.release(` for create-style objects.
-    const method_needles = [_][]const u8{ ".deinit(", ".destroy(", ".release(" };
+    // `name.deinit(` / `name.destroy(` / `name.release(` / `name.unload(` for create-style objects.
+    const method_needles = [_][]const u8{ ".deinit(", ".destroy(", ".release(", ".unload(" };
     var i: usize = 0;
     while (i < body.len) : (i += 1) {
         if (!std.mem.startsWith(u8, body[i..], name)) continue;
@@ -866,4 +866,15 @@ test "leaky local alloc is flagged; defer free and return-transfer are not" {
     defer scratch_diags.deinit(gpa);
     try analyzeSource("scratch.zig", scratch_src, &scratch_diags, gpa);
     try std.testing.expect(scratch_diags.items.len == 0);
+
+    const unload_src =
+        \\pub fn ok(allocator: anytype) !void {
+        \\    const mesh = try allocator.create(u32);
+        \\    defer mesh.unload();
+        \\}
+    ;
+    var unload_diags: std.ArrayList(diagnostic.Diagnostic) = .empty;
+    defer unload_diags.deinit(gpa);
+    try analyzeSource("unload.zig", unload_src, &unload_diags, gpa);
+    try std.testing.expect(unload_diags.items.len == 0);
 }

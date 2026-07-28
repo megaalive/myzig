@@ -272,3 +272,31 @@ Env override for package file: `MYZIG_FRICTION_PLAYBOOK=/path/to/file.md`
 - **don't:** Fall back to hidden `page_allocator`/`c_allocator` for the lasting heap without documenting it
 - **promote-to-code-when:** scratch tokens already arena-discharged; hidden-allocator covers bare page/c
 - **incident:** EXT-STUDY-024
+
+### F-OWN-027 · Graphics Load pairs with Unload
+- **symptom:** inventing `deinit`/`allocator.destroy` for GPU/audio extern resources
+- **do:** Pair `Load*` / `init` with `.unload()` or `Unload*`; defer before leaving the scope
+- **don't:** Expect GPA leak detection to prove VRAM/audio cleanup
+- **promote-to-code-when:** already promoted → `unload` matches init-without-deinit and alloc discharge
+- **incident:** EXT-STUDY-025
+
+### F-OWN-028 · Unload staging CPU after GPU upload
+- **symptom:** keeping a CPU image/wave after it has been uploaded to a GPU/device resource
+- **do:** `unload` the staging buffer once the lasting resource exists
+- **don't:** Unload the GPU texture while still drawing it
+- **promote-to-code-when:** playbook; staging graphs need CFG
+- **incident:** EXT-STUDY-026
+
+### F-OWN-029 · Load GPU only after context init
+- **symptom:** `LoadTexture` before window/GL context, or closing context while textures remain
+- **do:** Init context first; `defer close` then `defer unload` so LIFO unloads before close
+- **don't:** Rely on process exit to reclaim device resources in long-lived apps
+- **promote-to-code-when:** playbook
+- **incident:** EXT-STUDY-026
+
+### F-OWN-030 · begin/end modes need defer end
+- **symptom:** missing `endDrawing` / `endTextureMode` after `begin*`
+- **do:** `beginX(); defer endX();` for mode stacks; same for device open/close pairs
+- **don't:** Treat begin/end as allocator acquires in alloc rules
+- **promote-to-code-when:** playbook until mode-stack modeling exists
+- **incident:** EXT-STUDY-027

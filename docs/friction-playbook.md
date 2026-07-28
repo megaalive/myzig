@@ -680,6 +680,13 @@ elease already helps
 - **promote-to-code-when:** already promoted → `src/mcp_client.zig` + CI probe/remote-call
 - **incident:** ZRIG-DOGFOOD-013
 
+### F-HARNESS-013 · `ask --mcp` is double-`--` + one session
+- **symptom:** Agents invent `--mcp-server=` flags or spawn a new MCP process per tool call in ask
+- **do:** `zrig ask … --allow proc.spawn --mcp -- <server…> -- <prompt>`; check receipt `tool_steps[].via == "mcp"`. See zrig `docs/ask.md` / F-ZRIG-013
+- **don't:** Put prompt before the second `--`; don't expect `tools/list` merged into the model catalog yet
+- **promote-to-code-when:** already promoted → ask `--mcp` + CI ask-mcp-receipt
+- **incident:** ZRIG-DOGFOOD-014
+
 ### F-OWN-068 · Comment-only `catch` must not hide `};`
 - **symptom:** `expected ';' after statement` after documenting empty `catch {}` for swallow-error
 - **do:** Multi-line `catch {\n    // intentional …\n};` so the closing brace is not line-commented

@@ -697,7 +697,7 @@ elease already helps
 ### F-HARNESS-015 · V6 plan-first / checkpoint / skills
 - **symptom:** Agents skip `--approve`, misuse `--resume`, or invent skill formats
 - **do:** `plan-first` + `--approve`; `--checkpoint`/`--resume`; skills = `.zrig/skills/*/SKILL.md` or `--skills-dir` (`docs/V6.md`)
-- **don't:** Expect SSE streaming or web UI yet; Content-Length is V7 (`docs/V7.md`)
+- **don't:** Expect SSE streaming or web UI yet; Content-Length is V7 (`docs/V7.md`); multi-server hub is V8 (`docs/V8.md`)
 - **promote-to-code-when:** already promoted → agent/skills + CI smokes
 - **incident:** ZRIG-DOGFOOD-016
 
@@ -707,6 +707,13 @@ elease already helps
 - **don't:** Mix NDJSON lines with Content-Length peers; don't gate Win dogfood on Zig-spawn CL until pipes are fixed
 - **promote-to-code-when:** already promoted → `mcp_framing.zig` + CI python smoke
 - **incident:** ZRIG-DOGFOOD-017
+
+### F-HARNESS-017 · Multi-server MCP hub namespaces
+- **symptom:** Agents use bare tool names with `--mcp-servers`, or spawn one server when they meant a hub
+- **do:** Offer/call `{id}.{tool}`; config under `.zrig/mcp_servers.json`; exclusive with `--mcp` (`docs/V8.md`, F-ZRIG-019)
+- **don't:** Put `.` in server ids; assume local registry under hub mode
+- **promote-to-code-when:** already promoted → `mcp_servers.zig` + CI hub smoke
+- **incident:** ZRIG-DOGFOOD-018
 
 ### F-OWN-068 · Comment-only `catch` must not hide `};`
 - **symptom:** `expected ';' after statement` after documenting empty `catch {}` for swallow-error

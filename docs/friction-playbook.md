@@ -716,11 +716,18 @@ elease already helps
 - **incident:** ZRIG-DOGFOOD-018
 
 ### F-HARNESS-018 · Ask `--stream` vs true incremental HTTP
-- **symptom:** Agents treat `--stream` as first-token transport; or skip SSE split tests
-- **do:** Expect receipt `streamed`; parser is incremental (`sse.zig`) but fetch may buffer; see `docs/V9.md` / F-ZRIG-020
-- **don't:** Claim live token latency until HTTP body is read incrementally
-- **promote-to-code-when:** already promoted → sse/openai_stream + mock CI grep
-- **incident:** ZRIG-DOGFOOD-019
+- **symptom:** Agents treat mock `--stream` as HTTP incremental; or regress to `readSliceShort`
+- **do:** Remote receipt `stream_incremental=true`; smoke `python3 scripts/sse_stream_smoke.py` (`docs/V9.1.md`, F-ZRIG-021)
+- **don't:** Use `readSliceShort` for streaming bodies; claim mock has transport incremental
+- **promote-to-code-when:** already promoted → peekGreedy loop + CI handshake
+- **incident:** ZRIG-DOGFOOD-020
+
+### F-OWN-070 · `readSliceShort` fills the whole buffer before returning
+- **symptom:** Streaming/chunked protocols appear buffered until EOF despite “incremental” read loops
+- **do:** Use `peekGreedy(1)` + `toss`, or a single `readVec`, when one underlying `stream()` should surface early
+- **don't:** Assume `readSliceShort` returns as soon as any bytes are available
+- **promote-to-code-when:** stay text unless a detector is cheap
+- **incident:** ZRIG-DOGFOOD-020
 
 ### F-OWN-069 · Do not use ArrayList slices after mutating the list
 - **symptom:** Silent empty parses / use-after-free when a line slice into `residual.items` is kept across `clearRetainingCapacity` / `appendSlice`

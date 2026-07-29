@@ -697,9 +697,16 @@ elease already helps
 ### F-HARNESS-015 · V6 plan-first / checkpoint / skills
 - **symptom:** Agents skip `--approve`, misuse `--resume`, or invent skill formats
 - **do:** `plan-first` + `--approve`; `--checkpoint`/`--resume`; skills = `.zrig/skills/*/SKILL.md` or `--skills-dir` (`docs/V6.md`)
-- **don't:** Expect streaming or Content-Length MCP yet
+- **don't:** Expect SSE streaming or web UI yet; Content-Length is V7 (`docs/V7.md`)
 - **promote-to-code-when:** already promoted → agent/skills + CI smokes
 - **incident:** ZRIG-DOGFOOD-016
+
+### F-HARNESS-016 · MCP `--framing content-length` vs ndjson
+- **symptom:** Client/server hang or parse failures when framing mismatched; Windows Zig-spawn CL self-talk hangs
+- **do:** Pass the same `--framing` on serve and probe/remote-call/ask; smoke serve with `python3 scripts/mcp_cl_smoke.py` (`docs/V7.md`, F-ZRIG-018)
+- **don't:** Mix NDJSON lines with Content-Length peers; don't gate Win dogfood on Zig-spawn CL until pipes are fixed
+- **promote-to-code-when:** already promoted → `mcp_framing.zig` + CI python smoke
+- **incident:** ZRIG-DOGFOOD-017
 
 ### F-OWN-068 · Comment-only `catch` must not hide `};`
 - **symptom:** `expected ';' after statement` after documenting empty `catch {}` for swallow-error

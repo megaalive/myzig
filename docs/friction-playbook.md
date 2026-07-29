@@ -750,6 +750,13 @@ elease already helps
 - **promote-to-code-when:** already promoted → `editor.zig` + CI smoke
 - **incident:** ZRIG-DOGFOOD-022, ZRIG-DOGFOOD-023
 
+### F-ZRIG-025 · WebSocket: flush after `respondWebSocket` or handshake hangs
+- **symptom:** WS client connect timeout; server wrote 101 but never flushed the upgrade response
+- **do:** `ws.flush()` immediately after `request.respondWebSocket(...)` before entering the read loop; smoke `scripts/web_smoke.py` (`docs/V10.3.md`)
+- **don't:** Enter `readSmallMessage` before flushing upgrade headers
+- **promote-to-code-when:** stay text unless repeated
+- **incident:** ZRIG-DOGFOOD-024
+
 ### F-OWN-072 · Zig 0.17 mutex is `Io.Mutex` (needs `Io`)
 - **symptom:** `Thread` has no member named `Mutex`; approval wait deadlocks without condition broadcast
 - **do:** `std.Io.Mutex` / `Io.Condition` with `lockUncancelable(io)` / `waitUncancelable(io, &mutex)` / `broadcast(io)`

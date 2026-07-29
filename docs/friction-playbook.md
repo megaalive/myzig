@@ -904,6 +904,13 @@ elease already helps
 - **promote-to-code-when:** already promoted → `mcp_framing.readSome`
 - **incident:** ZRIG-DOGFOOD-040
 
+### F-ZRIG-042 · `web.fetch` is gated HTML→text (not raw get)
+- **symptom:** `CapabilityDenied` without `net.connect`; agents dump raw HTML via `net.http.get` when they wanted readable text; `file:` URLs attempted
+- **do:** `--allow net.connect`; `web.fetch` / alias `web_fetch`; http/https only; loopback smoke (`docs/V26.md`)
+- **don't:** Treat `web_fetch` as ungated; skip HTML simplify; use non-http schemes
+- **promote-to-code-when:** already promoted → `tools/net.zig` `webFetch` + MCP schema
+- **incident:** ZRIG-DOGFOOD-041
+
 ### F-OWN-073 · Zig 0.17 wall time is `Io.Clock.Timestamp` (not `std.time.milliTimestamp`)
 - **symptom:** `time` has no member named `milliTimestamp`
 - **do:** `Io.Clock.Timestamp.now(io, .awake)` then `durationTo` / `raw.toMilliseconds()`; or `myzig.compat.unixSeconds` for unix epoch

@@ -750,6 +750,13 @@ elease already helps
 - **promote-to-code-when:** already promoted → `editor.zig` + CI smoke
 - **incident:** ZRIG-DOGFOOD-022, ZRIG-DOGFOOD-023
 
+### F-HARNESS-023 · Smoke web/editor with `--skills-dir examples/skills`
+- **symptom:** CI passes with `skills:0` while claiming skills support
+- **do:** Pass `--skills-dir examples/skills` in smokes; assert `skills >= 1` (`docs/V12.md`)
+- **don't:** Rely on empty default `.zrig/skills` in repo checkouts
+- **promote-to-code-when:** already promoted → smoke scripts
+- **incident:** ZRIG-DOGFOOD-027
+
 ### F-HARNESS-022 · Remote web/editor need net.connect before key errors
 - **symptom:** `missing API key` when the real block is missing `net.connect`
 - **do:** Enforce listen/connect caps first; shared `model/resolve.zig`; mock default for CI (`docs/V11.md`)
@@ -784,6 +791,13 @@ elease already helps
 - **don't:** Hardcode mock in new surfaces
 - **promote-to-code-when:** already promoted → `model/resolve.zig`
 - **incident:** ZRIG-DOGFOOD-026
+
+### F-ZRIG-028 · Web/editor load skills once at startup
+- **symptom:** Empty `skills:0` in CI while docs claim skill support on web/editor
+- **do:** `--skills-dir` / `--no-skills`; `skills.loadSystem`; smoke with `examples/skills` (`docs/V12.md`)
+- **don't:** Expect per-request skill reload in V12
+- **promote-to-code-when:** already promoted → cli + meta
+- **incident:** ZRIG-DOGFOOD-027
 
 ### F-OWN-072 · Zig 0.17 mutex is `Io.Mutex` (needs `Io`)
 - **symptom:** `Thread` has no member named `Mutex`; approval wait deadlocks without condition broadcast

@@ -869,6 +869,13 @@ elease already helps
 - **promote-to-code-when:** already promoted → `FanoutSink` + web subscribe/unsubscribe
 - **incident:** ZRIG-DOGFOOD-035
 
+### F-ZRIG-037 · Agent LLM mode is `--prompt`, not a second ask binary
+- **symptom:** Agents invent `zrig agent-llm` or duplicate ask flags without cost on agent receipts
+- **do:** `zrig agent --prompt …` → `runLlm` → turn engine; receipt `mode:llm` + tokens/cost (`docs/V21.md`)
+- **don't:** Treat plan-only agent as the only harness forever; forget `turn.run` returns an owned Receipt
+- **promote-to-code-when:** already promoted → `agent.runLlm` + schema 0.0.3
+- **incident:** ZRIG-DOGFOOD-036
+
 ### F-OWN-073 · Zig 0.17 wall time is `Io.Clock.Timestamp` (not `std.time.milliTimestamp`)
 - **symptom:** `time` has no member named `milliTimestamp`
 - **do:** `Io.Clock.Timestamp.now(io, .awake)` then `durationTo` / `raw.toMilliseconds()`; or `myzig.compat.unixSeconds` for unix epoch

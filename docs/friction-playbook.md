@@ -750,12 +750,26 @@ elease already helps
 - **promote-to-code-when:** already promoted → `editor.zig` + CI smoke
 - **incident:** ZRIG-DOGFOOD-022, ZRIG-DOGFOOD-023
 
+### F-HARNESS-021 · Concurrent WS needs thread-per-connection
+- **symptom:** Second browser/WS client blocks until the first session ends; approval smoke cannot rendezvous
+- **do:** Accept on main, handle on worker threads; smoke proves two `approval.requested` before either approve (`scripts/web_smoke.py`, `docs/V10.4.md`)
+- **don't:** Run long-lived `/ws` on the accept loop
+- **promote-to-code-when:** already promoted → `web.zig` fanout
+- **incident:** ZRIG-DOGFOOD-025
+
 ### F-ZRIG-025 · WebSocket: flush after `respondWebSocket` or handshake hangs
 - **symptom:** WS client connect timeout; server wrote 101 but never flushed the upgrade response
 - **do:** `ws.flush()` immediately after `request.respondWebSocket(...)` before entering the read loop; smoke `scripts/web_smoke.py` (`docs/V10.3.md`)
 - **don't:** Enter `readSmallMessage` before flushing upgrade headers
 - **promote-to-code-when:** stay text unless repeated
 - **incident:** ZRIG-DOGFOOD-024
+
+### F-ZRIG-026 · Web fanout: page_allocator in connection threads
+- **symptom:** GPA corruption under concurrent HTTP/WS workers
+- **do:** `page_allocator` for `ConnCtx` + connection-local work; wait for active workers before exit
+- **don't:** Share process GPA across detached accept workers
+- **promote-to-code-when:** stay text unless repeated
+- **incident:** ZRIG-DOGFOOD-025
 
 ### F-OWN-072 · Zig 0.17 mutex is `Io.Mutex` (needs `Io`)
 - **symptom:** `Thread` has no member named `Mutex`; approval wait deadlocks without condition broadcast

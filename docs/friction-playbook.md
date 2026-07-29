@@ -939,6 +939,13 @@ elease already helps
 - **promote-to-code-when:** already promoted → `model/routing.zig` + turn/editor hooks
 - **incident:** ZRIG-DOGFOOD-044
 
+### F-ZRIG-047 · Code search starts lexical (BM25), not embeddings
+- **symptom:** Empty results because index never built; agents wait for embedding provider; miss `.zig` files
+- **do:** `zrig index` / `index.build` then `search_code`; lazy rebuild on empty store (`docs/V31.md`)
+- **don't:** Treat missing embeddings as hard failure; walk `zig-out`/`.git`
+- **promote-to-code-when:** already promoted → `code_index.zig` + tools
+- **incident:** ZRIG-DOGFOOD-045
+
 ### F-OWN-073 · Zig 0.17 wall time is `Io.Clock.Timestamp` (not `std.time.milliTimestamp`)
 - **symptom:** `time` has no member named `milliTimestamp`
 - **do:** `Io.Clock.Timestamp.now(io, .awake)` then `durationTo` / `raw.toMilliseconds()`; or `myzig.compat.unixSeconds` for unix epoch

@@ -946,6 +946,13 @@ elease already helps
 - **promote-to-code-when:** already promoted → `code_index.zig` + tools
 - **incident:** ZRIG-DOGFOOD-045
 
+### F-ZRIG-048 · Sub-agents stay read-only and ordered
+- **symptom:** Write tools run in fan-out; results shuffled by thread completion; MCP used under isolation
+- **do:** `zrig subagents`; `read_only` turn filter; merge by task id (`docs/V32.md`)
+- **don't:** Share one mutable cfg across workers; skip IsolationDenied
+- **promote-to-code-when:** already promoted → `subagents.zig` + `turn.Options.read_only`
+- **incident:** ZRIG-DOGFOOD-046
+
 ### F-OWN-073 · Zig 0.17 wall time is `Io.Clock.Timestamp` (not `std.time.milliTimestamp`)
 - **symptom:** `time` has no member named `milliTimestamp`
 - **do:** `Io.Clock.Timestamp.now(io, .awake)` then `durationTo` / `raw.toMilliseconds()`; or `myzig.compat.unixSeconds` for unix epoch

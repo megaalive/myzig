@@ -953,6 +953,20 @@ elease already helps
 - **promote-to-code-when:** already promoted → `subagents.zig` + `turn.Options.read_only`
 - **incident:** ZRIG-DOGFOOD-046
 
+### F-ZRIG-049 · Multimodal is gated; mock has no vision
+- **symptom:** Mock asked to “see” images; turn fails when attachments present
+- **do:** Gate on `Kind.supportsImages`; ignore+warn on mock; OpenAI wire uses data URLs (`docs/V33.md`)
+- **don't:** Fail ask when images ignored; attach >4 images
+- **promote-to-code-when:** already promoted → `multimodal.zig` + openai_compat parts
+- **incident:** ZRIG-DOGFOOD-047
+
+### F-ZRIG-050 · Doctor metrics are process-local
+- **symptom:** Confuse with cost meter; assume RSS everywhere; use removed Zig time APIs
+- **do:** `/api/metrics` + `doctor --json`; unixSeconds for uptime (`docs/V34.md`)
+- **don't:** Call `std.time.milliTimestamp`
+- **promote-to-code-when:** already promoted → `runtime_metrics.zig`
+- **incident:** ZRIG-DOGFOOD-047
+
 ### F-OWN-073 · Zig 0.17 wall time is `Io.Clock.Timestamp` (not `std.time.milliTimestamp`)
 - **symptom:** `time` has no member named `milliTimestamp`
 - **do:** `Io.Clock.Timestamp.now(io, .awake)` then `durationTo` / `raw.toMilliseconds()`; or `myzig.compat.unixSeconds` for unix epoch

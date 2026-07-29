@@ -750,6 +750,13 @@ elease already helps
 - **promote-to-code-when:** already promoted → `editor.zig` + CI smoke
 - **incident:** ZRIG-DOGFOOD-022, ZRIG-DOGFOOD-023
 
+### F-HARNESS-024 · Untrack machine-local `.cursor/mcp.json`
+- **symptom:** Absolute `zig-out/bin/zrig.exe` paths land in git; clones break on other machines
+- **do:** Keep shared Cursor **rules** in myzig (`.cursor/rules/…`); gitignore `.cursor/` in dogfood apps; local MCP via user config
+- **don't:** Commit IDE paths that only work on one workstation
+- **promote-to-code-when:** stay text
+- **incident:** ZRIG-DOGFOOD-028
+
 ### F-HARNESS-023 · Smoke web/editor with `--skills-dir examples/skills`
 - **symptom:** CI passes with `skills:0` while claiming skills support
 - **do:** Pass `--skills-dir examples/skills` in smokes; assert `skills >= 1` (`docs/V12.md`)
@@ -798,6 +805,13 @@ elease already helps
 - **don't:** Expect per-request skill reload in V12
 - **promote-to-code-when:** already promoted → cli + meta
 - **incident:** ZRIG-DOGFOOD-027
+
+### F-ZRIG-029 · Editor stream: mock faux-deltas vs remote SSE sink
+- **symptom:** Mock `--stream` expected to hit HTTP; missing `message.delta` in editor polls
+- **do:** Faux word deltas for mock; remote `delta_out` bridge (`docs/V13.md`)
+- **don't:** Gate delta-protocol smoke on live API keys
+- **promote-to-code-when:** already promoted → editor DeltaBridge
+- **incident:** ZRIG-DOGFOOD-028
 
 ### F-OWN-072 · Zig 0.17 mutex is `Io.Mutex` (needs `Io`)
 - **symptom:** `Thread` has no member named `Mutex`; approval wait deadlocks without condition broadcast

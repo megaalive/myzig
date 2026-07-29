@@ -729,6 +729,20 @@ elease already helps
 - **promote-to-code-when:** stay text unless a detector is cheap
 - **incident:** ZRIG-DOGFOOD-020
 
+### F-OWN-071 · Zig 0.17 has no `std.mem.trimRight`
+- **symptom:** `struct 'mem' has no member named 'trimRight'`
+- **do:** Trim trailing bytes manually (`while` on `\r`/`\n`) or use `std.mem.trim` with a charset if suitable
+- **don't:** Copy older Zig snippets that call `trimRight`/`trimLeft` without checking the toolchain
+- **promote-to-code-when:** stay text unless agents keep repeating
+- **incident:** ZRIG-DOGFOOD-021
+
+### F-HARNESS-019 · `zrig web serve` is loopback + `net.listen`
+- **symptom:** Agents forget `--allow net.listen`, or expect public bind / live providers in V10
+- **do:** `web serve --allow net.listen [--max-requests N]`; smoke `python3 scripts/web_smoke.py` (`docs/V10.md`, F-ZRIG-022)
+- **don't:** Assume editor stdio protocol exists yet; V10 is HTTP mock ask only
+- **promote-to-code-when:** already promoted → `web.zig` + CI smoke
+- **incident:** ZRIG-DOGFOOD-021
+
 ### F-OWN-069 · Do not use ArrayList slices after mutating the list
 - **symptom:** Silent empty parses / use-after-free when a line slice into `residual.items` is kept across `clearRetainingCapacity` / `appendSlice`
 - **do:** `dupe` the line (and rest) before clearing/compacting the buffer

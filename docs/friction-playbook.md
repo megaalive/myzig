@@ -715,6 +715,20 @@ elease already helps
 - **promote-to-code-when:** already promoted → `mcp_servers.zig` + CI hub smoke
 - **incident:** ZRIG-DOGFOOD-018
 
+### F-HARNESS-018 · Ask `--stream` vs true incremental HTTP
+- **symptom:** Agents treat `--stream` as first-token transport; or skip SSE split tests
+- **do:** Expect receipt `streamed`; parser is incremental (`sse.zig`) but fetch may buffer; see `docs/V9.md` / F-ZRIG-020
+- **don't:** Claim live token latency until HTTP body is read incrementally
+- **promote-to-code-when:** already promoted → sse/openai_stream + mock CI grep
+- **incident:** ZRIG-DOGFOOD-019
+
+### F-OWN-069 · Do not use ArrayList slices after mutating the list
+- **symptom:** Silent empty parses / use-after-free when a line slice into `residual.items` is kept across `clearRetainingCapacity` / `appendSlice`
+- **do:** `dupe` the line (and rest) before clearing/compacting the buffer
+- **don't:** Point field parsers at `items` that the next residual rewrite invalidates
+- **promote-to-code-when:** stay text unless a detector is cheap
+- **incident:** ZRIG-DOGFOOD-019
+
 ### F-OWN-068 · Comment-only `catch` must not hide `};`
 - **symptom:** `expected ';' after statement` after documenting empty `catch {}` for swallow-error
 - **do:** Multi-line `catch {\n    // intentional …\n};` so the closing brace is not line-commented

@@ -855,6 +855,13 @@ elease already helps
 - **promote-to-code-when:** already promoted → `session_meter.zig`
 - **incident:** ZRIG-DOGFOOD-033
 
+### F-ZRIG-035 · Concurrent WS need one Shared meter (not per-Session file races)
+- **symptom:** Two `/ws` tabs each load/save the same meter file; totals diverge; race on disk
+- **do:** One `session_meter.Shared` per `web serve` process; Sessions point at it; ask receipts carry cost (`docs/V19.md`)
+- **don't:** Let each connection privately mutate + rewrite meter without a mutex
+- **promote-to-code-when:** already promoted → `Shared` + web ConnCtx wiring
+- **incident:** ZRIG-DOGFOOD-034
+
 ### F-OWN-072 · Zig 0.17 mutex is `Io.Mutex` (needs `Io`)
 - **symptom:** `Thread` has no member named `Mutex`; approval wait deadlocks without condition broadcast
 - **do:** `std.Io.Mutex` / `Io.Condition` with `lockUncancelable(io)` / `waitUncancelable(io, &mutex)` / `broadcast(io)`

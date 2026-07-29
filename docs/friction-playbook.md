@@ -876,6 +876,13 @@ elease already helps
 - **promote-to-code-when:** already promoted → `agent.runLlm` + schema 0.0.3
 - **incident:** ZRIG-DOGFOOD-036
 
+### F-ZRIG-038 · Plan `ask` lines need provider knobs on `agent <plan>`
+- **symptom:** Mid-plan LLM steps ignored, or agents only use `--prompt` and lose `run` interleaving
+- **do:** Plan line `ask <prompt>`; CLI `--provider`/skills on plan mode; receipt `mode:plan+llm` (`docs/V22.md`)
+- **don't:** Require a separate process per ask; invent a second plan format
+- **promote-to-code-when:** already promoted → `runPlan` ask branch + schema 0.0.4
+- **incident:** ZRIG-DOGFOOD-037
+
 ### F-OWN-073 · Zig 0.17 wall time is `Io.Clock.Timestamp` (not `std.time.milliTimestamp`)
 - **symptom:** `time` has no member named `milliTimestamp`
 - **do:** `Io.Clock.Timestamp.now(io, .awake)` then `durationTo` / `raw.toMilliseconds()`; or `myzig.compat.unixSeconds` for unix epoch

@@ -911,6 +911,13 @@ elease already helps
 - **promote-to-code-when:** already promoted → `tools/net.zig` `webFetch` + MCP schema
 - **incident:** ZRIG-DOGFOOD-041
 
+### F-ZRIG-043 · Self-verify `unavailable` must stay neutral
+- **symptom:** Empty workspace / no markers treated as failed verify; agents block on `proc.spawn` before discovery
+- **do:** `zrig verify` reports `status=unavailable` with exit 0; Zig via `build.zig` → `zig build`; use `--dry-run`/`--detect` (`docs/V27.md`)
+- **don't:** Map unavailable → failed task; require spawn to print “no command”
+- **promote-to-code-when:** already promoted → `project.zig` + `verify.zig` + CLI
+- **incident:** ZRIG-DOGFOOD-042
+
 ### F-OWN-073 · Zig 0.17 wall time is `Io.Clock.Timestamp` (not `std.time.milliTimestamp`)
 - **symptom:** `time` has no member named `milliTimestamp`
 - **do:** `Io.Clock.Timestamp.now(io, .awake)` then `durationTo` / `raw.toMilliseconds()`; or `myzig.compat.unixSeconds` for unix epoch

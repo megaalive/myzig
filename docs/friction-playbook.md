@@ -744,11 +744,18 @@ elease already helps
 - **incident:** ZRIG-DOGFOOD-021
 
 ### F-HARNESS-020 · `zrig editor` JSONL stdio protocol
-- **symptom:** Agents treat editor as MCP JSON-RPC, or skip `events.poll` after `task.create`
-- **do:** One JSON object per line; unique `id`; methods in `docs/V10.1.md`; smoke `python3 scripts/editor_smoke.py`
-- **don't:** Expect async worker/cancel/approval in V10.1; reject `..` paths in `reference.resolve`
+- **symptom:** Agents treat editor as MCP JSON-RPC, or expect sync `{done,text}` from `task.create`
+- **do:** One JSON object per line; unique `id`; async `started` then `events.poll`; methods in `docs/V10.2.md`; smoke `python3 scripts/editor_smoke.py`
+- **don't:** Assume V10.1 sync `done:true`; reject `..` paths in `reference.resolve`
 - **promote-to-code-when:** already promoted → `editor.zig` + CI smoke
-- **incident:** ZRIG-DOGFOOD-022
+- **incident:** ZRIG-DOGFOOD-022, ZRIG-DOGFOOD-023
+
+### F-OWN-072 · Zig 0.17 mutex is `Io.Mutex` (needs `Io`)
+- **symptom:** `Thread` has no member named `Mutex`; approval wait deadlocks without condition broadcast
+- **do:** `std.Io.Mutex` / `Io.Condition` with `lockUncancelable(io)` / `waitUncancelable(io, &mutex)` / `broadcast(io)`
+- **don't:** Reach for `std.Thread.Mutex` on 0.17; unlock without the matching `io`
+- **promote-to-code-when:** stay text unless a detector is cheap
+- **incident:** ZRIG-DOGFOOD-023
 
 ### F-OWN-069 · Do not use ArrayList slices after mutating the list
 - **symptom:** Silent empty parses / use-after-free when a line slice into `residual.items` is kept across `clearRetainingCapacity` / `appendSlice`

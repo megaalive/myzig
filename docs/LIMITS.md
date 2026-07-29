@@ -71,7 +71,7 @@ Also see `docs/BLINDSPOTS.md` (analyzer detail) and `docs/friction-playbook.md`.
 
 | Project | Note |
 |---------|------|
-| zrig | Primary unbounded dogfood; `check --prefer-compat --ratchet src` at 0 (see `ZRIG-DOGFOOD-001`); V10.1 editor open (`docs/GROWTH.md` in zrig) |
+| zrig | Primary unbounded dogfood; `check --prefer-compat --ratchet src` at 0 (see `ZRIG-DOGFOOD-001`); V10.2 async editor (`docs/GROWTH.md` in zrig) |
 | azig | Retired lab — historical calibration only (`AZIG-OWN-*`); do not maintain for coach maturity |
 | fpagnt | Capability bar (Free Pascal coding agent); not a myzig dependency |
 | external studies | Pattern notes only (`EXT-STUDY-*`); take checkable methods, not domain-specific bans |

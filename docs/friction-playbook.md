@@ -739,9 +739,16 @@ elease already helps
 ### F-HARNESS-019 · `zrig web serve` is loopback + `net.listen`
 - **symptom:** Agents forget `--allow net.listen`, or expect public bind / live providers in V10
 - **do:** `web serve --allow net.listen [--max-requests N]`; smoke `python3 scripts/web_smoke.py` (`docs/V10.md`, F-ZRIG-022)
-- **don't:** Assume editor stdio protocol exists yet; V10 is HTTP mock ask only
+- **don't:** Bind non-loopback in V10; use `zrig editor` for stdio protocol (V10.1)
 - **promote-to-code-when:** already promoted → `web.zig` + CI smoke
 - **incident:** ZRIG-DOGFOOD-021
+
+### F-HARNESS-020 · `zrig editor` JSONL stdio protocol
+- **symptom:** Agents treat editor as MCP JSON-RPC, or skip `events.poll` after `task.create`
+- **do:** One JSON object per line; unique `id`; methods in `docs/V10.1.md`; smoke `python3 scripts/editor_smoke.py`
+- **don't:** Expect async worker/cancel/approval in V10.1; reject `..` paths in `reference.resolve`
+- **promote-to-code-when:** already promoted → `editor.zig` + CI smoke
+- **incident:** ZRIG-DOGFOOD-022
 
 ### F-OWN-069 · Do not use ArrayList slices after mutating the list
 - **symptom:** Silent empty parses / use-after-free when a line slice into `residual.items` is kept across `clearRetainingCapacity` / `appendSlice`

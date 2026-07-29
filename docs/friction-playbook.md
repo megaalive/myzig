@@ -750,6 +750,13 @@ elease already helps
 - **promote-to-code-when:** already promoted → `editor.zig` + CI smoke
 - **incident:** ZRIG-DOGFOOD-022, ZRIG-DOGFOOD-023
 
+### F-HARNESS-025 · Smoke must drain `{"event":…}` before matching request ids
+- **symptom:** `events.poll` response read as the next `task.create` reply when live_push is on
+- **do:** Client loop: if line has `event`, stash; else match `id` (`scripts/editor_smoke.py`, `docs/V14.md`)
+- **don't:** Assume one readline == one RPC reply
+- **promote-to-code-when:** stay text / smoke
+- **incident:** ZRIG-DOGFOOD-029
+
 ### F-HARNESS-024 · Untrack machine-local `.cursor/mcp.json`
 - **symptom:** Absolute `zig-out/bin/zrig.exe` paths land in git; clones break on other machines
 - **do:** Keep shared Cursor **rules** in myzig (`.cursor/rules/…`); gitignore `.cursor/` in dogfood apps; local MCP via user config
@@ -812,6 +819,13 @@ elease already helps
 - **don't:** Gate delta-protocol smoke on live API keys
 - **promote-to-code-when:** already promoted → editor DeltaBridge
 - **incident:** ZRIG-DOGFOOD-028
+
+### F-ZRIG-030 · Live push needs an output mutex (stdio/WS)
+- **symptom:** Corrupt interleaved NDJSON under concurrent response + push writes
+- **do:** Shared `Io.Mutex`; `{"event":…}` notifications (`docs/V14.md`)
+- **don't:** Unlock session then write stdout without out_mu
+- **promote-to-code-when:** already promoted → LivePush
+- **incident:** ZRIG-DOGFOOD-029
 
 ### F-OWN-072 · Zig 0.17 mutex is `Io.Mutex` (needs `Io`)
 - **symptom:** `Thread` has no member named `Mutex`; approval wait deadlocks without condition broadcast

@@ -841,6 +841,13 @@ elease already helps
 - **promote-to-code-when:** already promoted → DeltaBridge.buffer + TokenUsage
 - **incident:** ZRIG-DOGFOOD-031
 
+### F-ZRIG-033 · Providers file stores profiles + pricing, never API keys
+- **symptom:** Agents invent a secrets file or hardcode keys next to model ids
+- **do:** `.zrig/providers.json` with `api_key_env` only; budget `session_usd`/`per_turn_usd`/`action`; `zrig init` template (`docs/V17.md`)
+- **don't:** Put raw API keys in JSON; treat missing file as empty (flags/env still work)
+- **promote-to-code-when:** already promoted → `providers_file.zig` + resolve
+- **incident:** ZRIG-DOGFOOD-032
+
 ### F-OWN-072 · Zig 0.17 mutex is `Io.Mutex` (needs `Io`)
 - **symptom:** `Thread` has no member named `Mutex`; approval wait deadlocks without condition broadcast
 - **do:** `std.Io.Mutex` / `Io.Condition` with `lockUncancelable(io)` / `waitUncancelable(io, &mutex)` / `broadcast(io)`

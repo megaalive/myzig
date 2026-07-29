@@ -702,11 +702,11 @@ elease already helps
 - **incident:** ZRIG-DOGFOOD-016
 
 ### F-HARNESS-016 · MCP `--framing content-length` vs ndjson
-- **symptom:** Client/server hang or parse failures when framing mismatched; Windows Zig-spawn CL self-talk hangs
-- **do:** Pass the same `--framing` on serve and probe/remote-call/ask; smoke serve with `python3 scripts/mcp_cl_smoke.py` (`docs/V7.md`, F-ZRIG-018)
-- **don't:** Mix NDJSON lines with Content-Length peers; don't gate Win dogfood on Zig-spawn CL until pipes are fixed
-- **promote-to-code-when:** already promoted → `mcp_framing.zig` + CI python smoke
-- **incident:** ZRIG-DOGFOOD-017
+- **symptom:** Client/server hang or parse failures when framing mismatched; (historical) Windows Zig-spawn CL hung on `readSliceShort`
+- **do:** Same `--framing` on serve and probe/ask; V25 uses one short `readVec` per CL accumulate (`docs/V25.md`, F-ZRIG-041)
+- **don't:** Mix NDJSON lines with Content-Length peers; don't `readSliceShort` large buffers on interactive pipes
+- **promote-to-code-when:** already promoted → `mcp_framing.zig` `readSome` + CI smokes
+- **incident:** ZRIG-DOGFOOD-017 / ZRIG-DOGFOOD-040
 
 ### F-HARNESS-017 · Multi-server MCP hub namespaces
 - **symptom:** Agents use bare tool names with `--mcp-servers`, or spawn one server when they meant a hub
@@ -896,6 +896,13 @@ elease already helps
 - **don't:** Treat `#out` as the only durable transcript
 - **promote-to-code-when:** already promoted → web index history panel
 - **incident:** ZRIG-DOGFOOD-039
+
+### F-ZRIG-041 · Content-Length: never `readSliceShort` on interactive pipes
+- **symptom:** Win CL `mcp probe` / interactive serve hangs until stdin EOF; batch Python smoke still passes
+- **do:** One short `readVec` (or peekGreedy+toss) per accumulate loop; parse frames from residual (`docs/V25.md`)
+- **don't:** Fill a 4KiB+ buffer with `readSliceShort` while the peer waits for a response (same class as F-ZRIG-021 / F-OWN-style stream reads)
+- **promote-to-code-when:** already promoted → `mcp_framing.readSome`
+- **incident:** ZRIG-DOGFOOD-040
 
 ### F-OWN-073 · Zig 0.17 wall time is `Io.Clock.Timestamp` (not `std.time.milliTimestamp`)
 - **symptom:** `time` has no member named `milliTimestamp`

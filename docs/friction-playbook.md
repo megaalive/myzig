@@ -834,6 +834,13 @@ elease already helps
 - **promote-to-code-when:** already promoted → `cancel_flag` on CompletionRequest / Session
 - **incident:** ZRIG-DOGFOOD-030
 
+### F-ZRIG-032 · No-buffer completed must not re-send full text
+- **symptom:** UI already has `message.delta` chunks but still allocates/parses a duplicate full answer on `message.completed`
+- **do:** `--no-buffer` / `params.buffer:false` → `buffered:false` + `chars`; always emit `message.usage` (`docs/V16.md`)
+- **don't:** Assume provider usage exists offline — mark `estimated:true` for mock/heuristic
+- **promote-to-code-when:** already promoted → DeltaBridge.buffer + TokenUsage
+- **incident:** ZRIG-DOGFOOD-031
+
 ### F-OWN-072 · Zig 0.17 mutex is `Io.Mutex` (needs `Io`)
 - **symptom:** `Thread` has no member named `Mutex`; approval wait deadlocks without condition broadcast
 - **do:** `std.Io.Mutex` / `Io.Condition` with `lockUncancelable(io)` / `waitUncancelable(io, &mutex)` / `broadcast(io)`

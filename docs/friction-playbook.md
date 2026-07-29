@@ -890,6 +890,13 @@ elease already helps
 - **promote-to-code-when:** already promoted → `appendAskToolSteps` + `subscribe` replace
 - **incident:** ZRIG-DOGFOOD-038
 
+### F-ZRIG-040 · SPA must keep turn history (don't wipe on every ask)
+- **symptom:** Agents/users lose prior answers when clicking ask again; no multi-turn trail in the UI
+- **do:** Commit completed turns to `#hist` + `sessionStorage`; clear-history control (`docs/V24.md`)
+- **don't:** Treat `#out` as the only durable transcript
+- **promote-to-code-when:** already promoted → web index history panel
+- **incident:** ZRIG-DOGFOOD-039
+
 ### F-OWN-073 · Zig 0.17 wall time is `Io.Clock.Timestamp` (not `std.time.milliTimestamp`)
 - **symptom:** `time` has no member named `milliTimestamp`
 - **do:** `Io.Clock.Timestamp.now(io, .awake)` then `durationTo` / `raw.toMilliseconds()`; or `myzig.compat.unixSeconds` for unix epoch

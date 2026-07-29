@@ -848,6 +848,13 @@ elease already helps
 - **promote-to-code-when:** already promoted → `providers_file.zig` + resolve
 - **incident:** ZRIG-DOGFOOD-032
 
+### F-ZRIG-034 · Persist meter across WS reconnects (file, not memory alone)
+- **symptom:** Cost badge resets on every new `/ws` Session; budget stop forgotten after refresh
+- **do:** `.zrig/session_meter.json` load/save; `meter.reset`; SPA badge (`docs/V18.md`)
+- **don't:** Assume one long-lived Session per browser tab without persist
+- **promote-to-code-when:** already promoted → `session_meter.zig`
+- **incident:** ZRIG-DOGFOOD-033
+
 ### F-OWN-072 · Zig 0.17 mutex is `Io.Mutex` (needs `Io`)
 - **symptom:** `Thread` has no member named `Mutex`; approval wait deadlocks without condition broadcast
 - **do:** `std.Io.Mutex` / `Io.Condition` with `lockUncancelable(io)` / `waitUncancelable(io, &mutex)` / `broadcast(io)`

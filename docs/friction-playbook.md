@@ -862,6 +862,20 @@ elease already helps
 - **promote-to-code-when:** already promoted → `Shared` + web ConnCtx wiring
 - **incident:** ZRIG-DOGFOOD-034
 
+### F-ZRIG-036 · Multi-tab meter needs fanout (shared memory alone is invisible)
+- **symptom:** Idle SPA tab badge stays stale while another tab spends tokens
+- **do:** Subscribe each WS live-push to `Shared`; broadcast `meter.update` after apply/reset (`docs/V20.md`)
+- **don't:** Assume clients will poll `initialize` / reload the meter file
+- **promote-to-code-when:** already promoted → `FanoutSink` + web subscribe/unsubscribe
+- **incident:** ZRIG-DOGFOOD-035
+
+### F-OWN-073 · Zig 0.17 wall time is `Io.Clock.Timestamp` (not `std.time.milliTimestamp`)
+- **symptom:** `time` has no member named `milliTimestamp`
+- **do:** `Io.Clock.Timestamp.now(io, .awake)` then `durationTo` / `raw.toMilliseconds()`; or `myzig.compat.unixSeconds` for unix epoch
+- **don't:** Reach for removed `std.time.milliTimestamp` / `timestamp` / `.monotonic` (clock tag is `.awake`)
+- **promote-to-code-when:** stay text unless agents keep repeating
+- **incident:** ZRIG-DOGFOOD-035
+
 ### F-OWN-072 · Zig 0.17 mutex is `Io.Mutex` (needs `Io`)
 - **symptom:** `Thread` has no member named `Mutex`; approval wait deadlocks without condition broadcast
 - **do:** `std.Io.Mutex` / `Io.Condition` with `lockUncancelable(io)` / `waitUncancelable(io, &mutex)` / `broadcast(io)`

@@ -750,6 +750,13 @@ elease already helps
 - **promote-to-code-when:** already promoted → `editor.zig` + CI smoke
 - **incident:** ZRIG-DOGFOOD-022, ZRIG-DOGFOOD-023
 
+### F-HARNESS-022 · Remote web/editor need net.connect before key errors
+- **symptom:** `missing API key` when the real block is missing `net.connect`
+- **do:** Enforce listen/connect caps first; shared `model/resolve.zig`; mock default for CI (`docs/V11.md`)
+- **don't:** Report key-missing before capability denial
+- **promote-to-code-when:** already promoted → resolve + cli dispatch
+- **incident:** ZRIG-DOGFOOD-026
+
 ### F-HARNESS-021 · Concurrent WS needs thread-per-connection
 - **symptom:** Second browser/WS client blocks until the first session ends; approval smoke cannot rendezvous
 - **do:** Accept on main, handle on worker threads; smoke proves two `approval.requested` before either approve (`scripts/web_smoke.py`, `docs/V10.4.md`)
@@ -770,6 +777,13 @@ elease already helps
 - **don't:** Share process GPA across detached accept workers
 - **promote-to-code-when:** stay text unless repeated
 - **incident:** ZRIG-DOGFOOD-025
+
+### F-ZRIG-027 · Web/editor share ask provider resolve
+- **symptom:** Agents treat web/editor as mock-only, or miss `net.connect` + API key
+- **do:** Same flags/env as `ask`; default mock; `/api/meta` + editor `initialize` report provider (`docs/V11.md`)
+- **don't:** Hardcode mock in new surfaces
+- **promote-to-code-when:** already promoted → `model/resolve.zig`
+- **incident:** ZRIG-DOGFOOD-026
 
 ### F-OWN-072 · Zig 0.17 mutex is `Io.Mutex` (needs `Io`)
 - **symptom:** `Thread` has no member named `Mutex`; approval wait deadlocks without condition broadcast

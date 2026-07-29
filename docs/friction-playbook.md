@@ -827,6 +827,13 @@ elease already helps
 - **promote-to-code-when:** already promoted → LivePush
 - **incident:** ZRIG-DOGFOOD-029
 
+### F-ZRIG-031 · Mid-stream cancel needs an atomic flag (not only mutex bool)
+- **symptom:** `task.cancel` only stops approval wait; remote SSE / faux deltas keep finishing → unwanted `message.completed`
+- **do:** `std.atomic.Value(bool)` polled in SSE read loop + faux emitter; map `error.Cancelled` → `task.cancelled` (`docs/V15.md`)
+- **don't:** Hold session mutex across HTTP reads just to check cancel; treat cancel as `task.failed`
+- **promote-to-code-when:** already promoted → `cancel_flag` on CompletionRequest / Session
+- **incident:** ZRIG-DOGFOOD-030
+
 ### F-OWN-072 · Zig 0.17 mutex is `Io.Mutex` (needs `Io`)
 - **symptom:** `Thread` has no member named `Mutex`; approval wait deadlocks without condition broadcast
 - **do:** `std.Io.Mutex` / `Io.Condition` with `lockUncancelable(io)` / `waitUncancelable(io, &mutex)` / `broadcast(io)`

@@ -918,6 +918,20 @@ elease already helps
 - **promote-to-code-when:** already promoted → `project.zig` + `verify.zig` + CLI
 - **incident:** ZRIG-DOGFOOD-042
 
+### F-ZRIG-044 · `update_plan` replaces the whole checklist
+- **symptom:** Invalid/partial plan args; SPA never updates without `plan.updated`
+- **do:** `plan:[{step,status}]` all-or-nothing; live `plan.updated` on editor/web (`docs/V28.md`)
+- **don't:** Treat as apply_patch; merge steps ad hoc
+- **promote-to-code-when:** already promoted → `plan_state.zig` + `update_plan` tool
+- **incident:** ZRIG-DOGFOOD-043
+
+### F-ZRIG-045 · Reasoning deltas are UI-only
+- **symptom:** Thinking text mixed into final answer / history
+- **do:** Handle `reasoning.delta` in thinking panel; faux trace on mock stream (`docs/V29.md`)
+- **don't:** Store reasoning as assistant content in receipts
+- **promote-to-code-when:** already promoted → editor `pushReasoningText` + SPA panel
+- **incident:** ZRIG-DOGFOOD-043
+
 ### F-OWN-073 · Zig 0.17 wall time is `Io.Clock.Timestamp` (not `std.time.milliTimestamp`)
 - **symptom:** `time` has no member named `milliTimestamp`
 - **do:** `Io.Clock.Timestamp.now(io, .awake)` then `durationTo` / `raw.toMilliseconds()`; or `myzig.compat.unixSeconds` for unix epoch

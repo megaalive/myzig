@@ -71,7 +71,7 @@ Also see `docs/BLINDSPOTS.md` (analyzer detail) and `docs/friction-playbook.md`.
 
 | Project | Note |
 |---------|------|
-| zrig | Primary unbounded dogfood; V22 plan ask steps + fanout reject metric (`docs/V22.md` in zrig) |
+| zrig | Primary unbounded dogfood; V23 nested ask-tool + drop-oldest fanout (`docs/V23.md` in zrig) |
 | azig | Retired lab — historical calibration only (`AZIG-OWN-*`); do not maintain for coach maturity |
 | fpagnt | Capability bar (Free Pascal coding agent); not a myzig dependency |
 | external studies | Pattern notes only (`EXT-STUDY-*`); take checkable methods, not domain-specific bans |

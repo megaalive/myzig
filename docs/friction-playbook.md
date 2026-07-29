@@ -883,6 +883,13 @@ elease already helps
 - **promote-to-code-when:** already promoted → `runPlan` ask branch + schema 0.0.4
 - **incident:** ZRIG-DOGFOOD-037
 
+### F-ZRIG-039 · Ask receipts should nest tool calls; fanout should drop-oldest
+- **symptom:** Plan ask step hides which tools ran; 33rd WS silently misses meter updates
+- **do:** Emit `ask-tool` steps with `parent_step`; replace oldest fanout sink at cap (`docs/V23.md`)
+- **don't:** Flatten tools into one opaque ask step; reject new WS forever when full
+- **promote-to-code-when:** already promoted → `appendAskToolSteps` + `subscribe` replace
+- **incident:** ZRIG-DOGFOOD-038
+
 ### F-OWN-073 · Zig 0.17 wall time is `Io.Clock.Timestamp` (not `std.time.milliTimestamp`)
 - **symptom:** `time` has no member named `milliTimestamp`
 - **do:** `Io.Clock.Timestamp.now(io, .awake)` then `durationTo` / `raw.toMilliseconds()`; or `myzig.compat.unixSeconds` for unix epoch

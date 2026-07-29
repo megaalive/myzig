@@ -932,6 +932,13 @@ elease already helps
 - **promote-to-code-when:** already promoted → editor `pushReasoningText` + SPA panel
 - **incident:** ZRIG-DOGFOOD-043
 
+### F-ZRIG-046 · Complexity routing is opt-in and evented
+- **symptom:** Model id changes silently; router active with one model blank; agents invent custom score rules
+- **do:** `providers.json` `routing` block or `--routing` + simple/complex; emit `model.route_selected` (`docs/V30.md`)
+- **don't:** Enable with empty models; hide route decisions from receipts/UI
+- **promote-to-code-when:** already promoted → `model/routing.zig` + turn/editor hooks
+- **incident:** ZRIG-DOGFOOD-044
+
 ### F-OWN-073 · Zig 0.17 wall time is `Io.Clock.Timestamp` (not `std.time.milliTimestamp`)
 - **symptom:** `time` has no member named `milliTimestamp`
 - **do:** `Io.Clock.Timestamp.now(io, .awake)` then `durationTo` / `raw.toMilliseconds()`; or `myzig.compat.unixSeconds` for unix epoch

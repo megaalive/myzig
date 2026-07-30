@@ -995,6 +995,13 @@ elease already helps
 - **promote-to-code-when:** already promoted → `lang.zig` + turn Options.reply_lang
 - **incident:** ZRIG-DOGFOOD-051
 
+### F-ZRIG-055 · `files.str_replace` is unique-string edit, not Zig AST
+- **symptom:** Agents treat V39 as `pascal_edit` / Ast rename; multi-replace silently; flatten multiline `old`/`new` via ask args
+- **do:** Exact one match; refine needle on NotUnique; keep full JSON args on ask/MCP; `--dry-run` (`docs/V39.md`)
+- **don't:** Claim AST/symbol rename; use `files.write` for whole-file when a unique needle exists
+- **promote-to-code-when:** already promoted → `str_replace.zig` + `files.str_replace`
+- **incident:** ZRIG-DOGFOOD-052
+
 ### F-OWN-073 · Zig 0.17 wall time is `Io.Clock.Timestamp` (not `std.time.milliTimestamp`)
 - **symptom:** `time` has no member named `milliTimestamp`
 - **do:** `Io.Clock.Timestamp.now(io, .awake)` then `durationTo` / `raw.toMilliseconds()`; or `myzig.compat.unixSeconds` for unix epoch

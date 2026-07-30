@@ -119,6 +119,39 @@ pub fn write(writer: *std.Io.Writer, bundle: Bundle, show_sources: bool) std.Io.
     }
 }
 
+pub const AppendError = error{ EmptyNote, OutOfMemory } || compat.WriteError || compat.PathError || compat.ReadError;
+
+/// Append a dated note to `.myzig/friction-playbook.md` (create overlay if missing).
+pub fn appendNote(io: compat.Io, gpa: std.mem.Allocator, text: []const u8) AppendError![]const u8 {
+    const path = ".myzig/friction-playbook.md";
+    try compat.createDirPath(io, ".myzig");
+    const trimmed = std.mem.trim(u8, text, " \t\r\n");
+    if (trimmed.len == 0) return error.EmptyNote;
+
+    const existing = compat.readFileAlloc(io, gpa, path, 2 * 1024 * 1024) catch try gpa.dupe(u8,
+        \\# Project friction overlay
+        \\
+        \\Notes captured with `myzig friction note` / `zrig friction note`.
+        \\
+    );
+    defer gpa.free(existing);
+
+    const block = try std.fmt.allocPrint(gpa,
+        \\
+        \\### note · agent
+        \\- **capture:** {s}
+        \\- **do:** Promote to F-* tip or incident when it repeats
+        \\- **don't:** Leave only in chat memory
+        \\
+    , .{trimmed});
+    defer gpa.free(block);
+
+    const merged = try std.mem.concat(gpa, u8, &.{ existing, block });
+    defer gpa.free(merged);
+    try compat.writeFile(io, path, merged);
+    return path;
+}
+
 test "embedded stub is non-empty" {
     try std.testing.expect(embedded_playbook.len > 40);
 }

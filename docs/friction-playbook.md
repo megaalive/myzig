@@ -1023,6 +1023,27 @@ elease already helps
 - **promote-to-code-when:** already promoted → `zig_edit.zig` + tool `zig_edit`
 - **incident:** ZRIG-DOGFOOD-055
 
+### F-ZRIG-059 · V43 nested Ast + same-file id refs still not cross-file
+- **symptom:** Agents assume `rename_refs` updates other files / skips locals with same name
+- **do:** Nested struct methods ok; same-file identifier tokens only (`docs/V43.md`)
+- **don't:** Treat as IDE rename-symbol
+- **promote-to-code-when:** already promoted → `zig_edit.zig` walk + renameAllIdentifiers
+- **incident:** ZRIG-DOGFOOD-056
+
+### F-ZRIG-060 · V44 sessions are JSONL, not fpagnt HTML/undo
+- **symptom:** Expect md export / checkpoint restore / undo from `/api/sessions`
+- **do:** Use list/new/append/export JSONL; hist SPA is still a cache (`docs/V44.md`)
+- **don't:** Assume durable model-context restore
+- **promote-to-code-when:** already promoted → `session_store.zig`
+- **incident:** ZRIG-DOGFOOD-057
+
+### F-ZRIG-061 · Capture friction with `friction note` before new rules
+- **symptom:** Skip playbook updates mid-dogfood; invent tips only in chat
+- **do:** `myzig friction note …` / `zrig friction note …` → `.myzig/friction-playbook.md` (`docs/V45.md`)
+- **don't:** Jump to new Zig rules on first stumble
+- **promote-to-code-when:** already promoted → `friction.appendNote`
+- **incident:** ZRIG-DOGFOOD-058
+
 ### F-OWN-073 · Zig 0.17 wall time is `Io.Clock.Timestamp` (not `std.time.milliTimestamp`)
 - **symptom:** `time` has no member named `milliTimestamp`
 - **do:** `Io.Clock.Timestamp.now(io, .awake)` then `durationTo` / `raw.toMilliseconds()`; or `myzig.compat.unixSeconds` for unix epoch

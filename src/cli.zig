@@ -78,6 +78,7 @@ pub fn writeHelp(writer: *std.Io.Writer) std.Io.Writer.Error!void {
         \\                            List rule catalog
         \\  receipt [path]            Emit thin check receipt (JSON)
         \\  friction [--sources]      Living text playbook (update without new code)
+        \\  friction note <text…>     Append capture note to .myzig/friction-playbook.md
         \\  limits [--sources]        Published honest detector ceilings
         \\  agent [--full]            Agent contract (+ optional limits/friction/rules)
         \\  verify-cost <case|--list> Leveled cost witness (claimed only after run)
@@ -321,12 +322,23 @@ pub fn dispatch(rio: RunIo, argv: []const []const u8) !void {
             try rio.stdout.writeAll("created .myzig/ (friction overlay + agent-notes)\n");
         },
         .friction => {
+            if (rest.len >= 1 and (std.mem.eql(u8, rest[0], "note") or std.mem.eql(u8, rest[0], "append"))) {
+                if (rest.len < 2) {
+                    try rio.stderr.writeAll("myzig friction note <text…>\n");
+                    return error.Usage;
+                }
+                const text = try std.mem.join(rio.allocator, " ", rest[1..]);
+                defer rio.allocator.free(text);
+                const path = try friction_mod.appendNote(rio.io, rio.allocator, text);
+                try rio.stdout.print("appended friction note → {s}\n", .{path});
+                return;
+            }
             var show_sources = false;
             for (rest) |a| {
                 if (std.mem.eql(u8, a, "--sources")) {
                     show_sources = true;
                 } else {
-                    try rio.stderr.print("myzig friction: unknown flag '{s}'\n", .{a});
+                    try rio.stderr.print("myzig friction: unknown flag '{s}' (or use: friction note <text>)\n", .{a});
                     return error.Usage;
                 }
             }

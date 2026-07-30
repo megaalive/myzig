@@ -109,7 +109,6 @@ pub fn envGet(gpa: std.mem.Allocator, key: []const u8) EnvError![]u8 {
         return environ.getAlloc(gpa, key) catch |err| switch (err) {
             error.OutOfMemory => error.OutOfMemory,
             error.EnvironmentVariableMissing, error.InvalidWtf8 => error.EnvironmentVariableNotFound,
-            else => error.EnvironmentVariableNotFound,
         };
     }
     const key_z = try gpa.dupeSentinel(u8, key, 0);

@@ -1023,18 +1023,18 @@ elease already helps
 - **promote-to-code-when:** already promoted → `zig_edit.zig` + tool `zig_edit`
 - **incident:** ZRIG-DOGFOOD-055
 
-### F-ZRIG-059 · V43 nested Ast + same-file id refs still not cross-file
+### F-ZRIG-059 · V43 nested Ast + same-file id refs; cross-file needs flag
 - **symptom:** Agents assume `rename_refs` updates other files / skips locals with same name
-- **do:** Nested struct methods ok; same-file identifier tokens only (`docs/V43.md`)
-- **don't:** Treat as IDE rename-symbol
-- **promote-to-code-when:** already promoted → `zig_edit.zig` walk + renameAllIdentifiers
+- **do:** Same-file by default; set `cross_file=true` for V46 workspace walk (`docs/V43.md`, `docs/V46.md`)
+- **don't:** Treat as IDE rename-symbol / ZIR
+- **promote-to-code-when:** already promoted → `zig_edit` + `cross_file` walker
 - **incident:** ZRIG-DOGFOOD-056
 
-### F-ZRIG-060 · V44 sessions are JSONL, not fpagnt HTML/undo
-- **symptom:** Expect md export / checkpoint restore / undo from `/api/sessions`
-- **do:** Use list/new/append/export JSONL; hist SPA is still a cache (`docs/V44.md`)
-- **don't:** Assume durable model-context restore
-- **promote-to-code-when:** already promoted → `session_store.zig`
+### F-ZRIG-060 · Sessions: JSONL + HTML lite; undo is separate
+- **symptom:** Expect fpagnt md2html/tool panels or conversation checkpoint restore
+- **do:** JSONL default; `?format=html` lite bubbles; `GET|POST /api/undo` for write rollback (`docs/V44.md`, `docs/V47.md`)
+- **don't:** Assume durable model-context restore / md2html parity
+- **promote-to-code-when:** already promoted → `session_store.exportHtml` + `undo_stack`
 - **incident:** ZRIG-DOGFOOD-057
 
 ### F-ZRIG-061 · Capture friction with `friction note` before new rules
@@ -1043,6 +1043,20 @@ elease already helps
 - **don't:** Jump to new Zig rules on first stumble
 - **promote-to-code-when:** already promoted → `friction.appendNote`
 - **incident:** ZRIG-DOGFOOD-058
+
+### F-ZRIG-062 · Cross-file rename is Ast tokens under `root`
+- **symptom:** Expect `@import` path rewrite or package-wide semantic rename
+- **do:** `zig_edit` + `cross_file` + optional `root`/`max_files`; unique decl in primary (`docs/V46.md`)
+- **don't:** Rename non-Zig or claim ZIR certainty
+- **promote-to-code-when:** already promoted → files.zig walker
+- **incident:** ZRIG-DOGFOOD-059
+
+### F-ZRIG-063 · Undo lite is process-memory, SHA-gated
+- **symptom:** Expect undo after restart or conversation checkpoint rollback
+- **do:** `POST /api/undo` after tool writes in the same process; conflict if file mutated (`docs/V47.md`)
+- **don't:** Confuse with `.checkpoint.json` / session switch restore
+- **promote-to-code-when:** already promoted → `undo_stack.zig`
+- **incident:** ZRIG-DOGFOOD-060
 
 ### F-OWN-073 · Zig 0.17 wall time is `Io.Clock.Timestamp` (not `std.time.milliTimestamp`)
 - **symptom:** `time` has no member named `milliTimestamp`

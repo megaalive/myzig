@@ -1002,6 +1002,27 @@ elease already helps
 - **promote-to-code-when:** already promoted → `str_replace.zig` + `files.str_replace`
 - **incident:** ZRIG-DOGFOOD-052
 
+### F-ZRIG-056 · Windows env via Environ, paths already WTF-8
+- **symptom:** Agents rewrite CreateFileW wrappers; `getenv` fails on Unicode env values; skip non-ASCII path tests
+- **do:** File APIs stay on Zig Io; `envGet` uses `Environ.global` on Windows; dogfood UTF-8 paths (`docs/V40.md`)
+- **don't:** Port fpagnt ToWidePath unless Zig std fails in dogfood
+- **promote-to-code-when:** already promoted → `compat/zig_0_17.zig` envGet
+- **incident:** ZRIG-DOGFOOD-053
+
+### F-ZRIG-057 · SPA history V41 is browser-local polish
+- **symptom:** Expect fpagnt server sessions / md bubbles / undo from `#hist`
+- **do:** Filter/export/reuse/token meta on sessionStorage hist (`docs/V41.md`)
+- **don't:** Treat SPA hist as durable multi-device transcript
+- **promote-to-code-when:** already promoted → `web.zig` hist tools
+- **incident:** ZRIG-DOGFOOD-054
+
+### F-ZRIG-058 · `zig_edit` is root-decl Ast splice, not refactor rename
+- **symptom:** Expect call-site rename / nested methods; skip re-parse; flatten JSON args
+- **do:** `replace_fn` / `rename_decl` only; optional `old`/`new` fallback; keep JSON (`docs/V42.md`)
+- **don't:** Claim ZIR/cross-file rename
+- **promote-to-code-when:** already promoted → `zig_edit.zig` + tool `zig_edit`
+- **incident:** ZRIG-DOGFOOD-055
+
 ### F-OWN-073 · Zig 0.17 wall time is `Io.Clock.Timestamp` (not `std.time.milliTimestamp`)
 - **symptom:** `time` has no member named `milliTimestamp`
 - **do:** `Io.Clock.Timestamp.now(io, .awake)` then `durationTo` / `raw.toMilliseconds()`; or `myzig.compat.unixSeconds` for unix epoch

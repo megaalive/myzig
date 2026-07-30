@@ -1,6 +1,8 @@
-//! Zig 0.17.x adapter — maps stable myzig.compat calls onto `std.Io` / process / c getenv.
+//! Zig 0.17.x adapter — maps stable myzig.compat calls onto `std.Io` / process /
+//! Unicode-safe env (Windows Environ) / clocks.
 
 const std = @import("std");
+const builtin = @import("builtin");
 const IoStd = std.Io;
 
 pub const name: []const u8 = "zig_0_17";
@@ -101,6 +103,15 @@ pub fn renameFile(io: Io, old_path: []const u8, new_path: []const u8) RenameErro
 }
 
 pub fn envGet(gpa: std.mem.Allocator, key: []const u8) EnvError![]u8 {
+    // Windows: PEB WTF-16 → WTF-8 via Environ (not ACP `getenv`). V40 / F-ZRIG-056.
+    if (builtin.os.tag == .windows) {
+        const environ: std.process.Environ = .{ .block = .global };
+        return environ.getAlloc(gpa, key) catch |err| switch (err) {
+            error.OutOfMemory => error.OutOfMemory,
+            error.EnvironmentVariableMissing, error.InvalidWtf8 => error.EnvironmentVariableNotFound,
+            else => error.EnvironmentVariableNotFound,
+        };
+    }
     const key_z = try gpa.dupeSentinel(u8, key, 0);
     defer gpa.free(key_z);
     const raw = std.c.getenv(key_z.ptr) orelse return error.EnvironmentVariableNotFound;
@@ -172,4 +183,38 @@ test "write read list stat roundtrip" {
     try std.testing.expect(cwd.len > 0);
 
     _ = unixSeconds(io);
+}
+
+test "unicode path roundtrip (WTF-8)" {
+    const io = std.testing.io;
+    const gpa = std.testing.allocator;
+    // café-路径 — non-ASCII UTF-8 / WTF-8 path bytes
+    const dir_path = ".zig-cache/myzig-compat-utf8-\xc3\xa9";
+    const file_name = "caf\xc3\xa9-\xe8\xb7\xaf\xe5\xbe\x84.txt";
+    const file_path = dir_path ++ "/" ++ file_name;
+    const body = "utf8-path-ok\n";
+
+    try createDirPath(io, dir_path);
+    defer IoStd.Dir.cwd().deleteTree(io, dir_path) catch {};
+
+    try writeFile(io, file_path, body);
+    const data = try readFileAlloc(io, gpa, file_path, 1024);
+    defer gpa.free(data);
+    try std.testing.expectEqualStrings(body, data);
+
+    const names = try listDirAlloc(io, gpa, dir_path);
+    defer freeDirList(gpa, names);
+    var found = false;
+    for (names) |n| {
+        if (std.mem.eql(u8, n, file_name)) found = true;
+    }
+    try std.testing.expect(found);
+
+    const renamed = dir_path ++ "/renamed-\xc3\xa9.txt";
+    try renameFile(io, file_path, renamed);
+    try std.testing.expectError(error.FileNotFound, access(io, file_path));
+    const again = try readFileAlloc(io, gpa, renamed, 1024);
+    defer gpa.free(again);
+    try std.testing.expectEqualStrings(body, again);
+    try deleteFile(io, renamed);
 }

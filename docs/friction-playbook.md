@@ -1058,6 +1058,41 @@ elease already helps
 - **promote-to-code-when:** already promoted → `undo_stack.zig`
 - **incident:** ZRIG-DOGFOOD-060
 
+### F-ZRIG-064 · apply_patch is unified diff (V48)
+- **symptom:** OpenAI patch format / fuzzy apply
+- **do:** `files.apply_patch` + optional SHA `expected_files` (`docs/V48.md`)
+- **don't:** Claim rename/binary parity
+- **promote-to-code-when:** already promoted → `apply_patch.zig`
+- **incident:** ZRIG-DOGFOOD-061
+
+### F-ZRIG-065 · Checkpoint is messages-only (V49)
+- **symptom:** Full fpagnt working_set restore assumptions
+- **do:** `.checkpoint.json` role+content; SPA save/load (`docs/V49.md`)
+- **don't:** Equate with file undo
+- **promote-to-code-when:** already promoted → `session_checkpoint.zig`
+- **incident:** ZRIG-DOGFOOD-062
+
+### F-ZRIG-066 · Session HTML tool rows are lite (V50)
+- **symptom:** md2html / diff panel expectations
+- **do:** `appendEvent` + HTML tool labels (`docs/V50.md`)
+- **don't:** Claim fpagnt export parity
+- **promote-to-code-when:** already promoted → `session_store.exportHtml`
+- **incident:** ZRIG-DOGFOOD-063
+
+### F-ZRIG-067 · Compaction drops older turns (V51)
+- **symptom:** Unbounded context / surprise drops
+- **do:** Default keep_turns=8 / char_limit=48k; stderr `history.compacted` (`docs/V51.md`)
+- **don't:** Expect LLM summarization
+- **promote-to-code-when:** already promoted → `history_compact.zig`
+- **incident:** ZRIG-DOGFOOD-064
+
+### F-ZRIG-068 · find_symbol is Ast not zls (V52)
+- **symptom:** LSP workspace/symbol expectations
+- **do:** Ast fn/var scan (`docs/V52.md`)
+- **don't:** Claim cross-language IDE symbols
+- **promote-to-code-when:** already promoted → `find_symbol.zig`
+- **incident:** ZRIG-DOGFOOD-065
+
 ### F-OWN-073 · Zig 0.17 wall time is `Io.Clock.Timestamp` (not `std.time.milliTimestamp`)
 - **symptom:** `time` has no member named `milliTimestamp`
 - **do:** `Io.Clock.Timestamp.now(io, .awake)` then `durationTo` / `raw.toMilliseconds()`; or `myzig.compat.unixSeconds` for unix epoch

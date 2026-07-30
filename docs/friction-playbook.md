@@ -981,6 +981,13 @@ elease already helps
 - **promote-to-code-when:** already promoted → `web_commands.zig` + `file_picker.zig`
 - **incident:** ZRIG-DOGFOOD-049
 
+### F-ZRIG-053 · Cancel kills Child; Zig kill already cleans (no second wait)
+- **symptom:** Hang after `Child.kill` + `wait`; Stop leaves `proc.run` ping running; typed prompts lost while busy
+- **do:** Pass `cancel_flag` into tools; `proc.run` kill on cancel; SPA queues follow-ups (`docs/V37.md`)
+- **don't:** `wait` after `kill` without handling cleanup races; assume CLI `zrig run proc.run` is cancelable
+- **promote-to-code-when:** already promoted → `tools/proc.zig` cancel path + SPA queue
+- **incident:** ZRIG-DOGFOOD-050
+
 ### F-OWN-073 · Zig 0.17 wall time is `Io.Clock.Timestamp` (not `std.time.milliTimestamp`)
 - **symptom:** `time` has no member named `milliTimestamp`
 - **do:** `Io.Clock.Timestamp.now(io, .awake)` then `durationTo` / `raw.toMilliseconds()`; or `myzig.compat.unixSeconds` for unix epoch

@@ -967,6 +967,13 @@ elease already helps
 - **promote-to-code-when:** already promoted → `runtime_metrics.zig`
 - **incident:** ZRIG-DOGFOOD-047
 
+### F-ZRIG-051 · Embeddings are optional; mock for CI, cosine when vecs exist
+- **symptom:** Agents require cloud embeddings for every search; mismatch mock query vs openai store; treat empty API key as fatal
+- **do:** `zrig index --mock-embed` offline; `--embed` + providers.json for OpenAI-compat; BM25 fallback (`docs/V35.md`)
+- **don't:** Query openai store with mock embedder; skip rebuild after enabling embeddings
+- **promote-to-code-when:** already promoted → `embeddings.zig` + `code_index.buildEmbeddings`
+- **incident:** ZRIG-DOGFOOD-048
+
 ### F-OWN-073 · Zig 0.17 wall time is `Io.Clock.Timestamp` (not `std.time.milliTimestamp`)
 - **symptom:** `time` has no member named `milliTimestamp`
 - **do:** `Io.Clock.Timestamp.now(io, .awake)` then `durationTo` / `raw.toMilliseconds()`; or `myzig.compat.unixSeconds` for unix epoch

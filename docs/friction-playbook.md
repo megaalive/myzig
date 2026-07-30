@@ -988,6 +988,13 @@ elease already helps
 - **promote-to-code-when:** already promoted → `tools/proc.zig` cancel path + SPA queue
 - **incident:** ZRIG-DOGFOOD-050
 
+### F-ZRIG-054 · Language UI is reply directive, not SPA i18n
+- **symptom:** Agents rebuild full UI translations; omit `## BAHASA` from system; expect `/api/ask` to honor SPA lang; leave V37 queue without `flushPromptQueue`
+- **do:** `id|en` only → `lang.mergeSystem` / `ask --lang` / `task.create` `lang` / SPA select + `/lang` (`docs/V38.md`)
+- **don't:** Localize every chrome string; skip injecting the directive into turns
+- **promote-to-code-when:** already promoted → `lang.zig` + turn Options.reply_lang
+- **incident:** ZRIG-DOGFOOD-051
+
 ### F-OWN-073 · Zig 0.17 wall time is `Io.Clock.Timestamp` (not `std.time.milliTimestamp`)
 - **symptom:** `time` has no member named `milliTimestamp`
 - **do:** `Io.Clock.Timestamp.now(io, .awake)` then `durationTo` / `raw.toMilliseconds()`; or `myzig.compat.unixSeconds` for unix epoch

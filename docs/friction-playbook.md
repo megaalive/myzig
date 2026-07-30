@@ -974,6 +974,13 @@ elease already helps
 - **promote-to-code-when:** already promoted → `embeddings.zig` + `code_index.buildEmbeddings`
 - **incident:** ZRIG-DOGFOOD-048
 
+### F-ZRIG-052 · SPA slash/@ is a subset, not full REPL
+- **symptom:** Agents expect fpagnt `/provider` `/model` slash verbs; forget `/api/files` needs `--cwd`; send `..` queries
+- **do:** Use documented SPA cmds (`/help`…); `@` inserts relative paths; reject `..` (`docs/V36.md`)
+- **don't:** Treat palette list as complete CLI surface
+- **promote-to-code-when:** already promoted → `web_commands.zig` + `file_picker.zig`
+- **incident:** ZRIG-DOGFOOD-049
+
 ### F-OWN-073 · Zig 0.17 wall time is `Io.Clock.Timestamp` (not `std.time.milliTimestamp`)
 - **symptom:** `time` has no member named `milliTimestamp`
 - **do:** `Io.Clock.Timestamp.now(io, .awake)` then `durationTo` / `raw.toMilliseconds()`; or `myzig.compat.unixSeconds` for unix epoch
